@@ -7,7 +7,7 @@ export function shuffle<T>(input: T[]): T[] {
   const arr = [...input];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
   }
   return arr;
 }
@@ -56,7 +56,7 @@ function fillExercise(seed: SentenceSeed, grammarId: string): Exercise | null {
     sub: seed.en,
     answer: seed.blank.answer,
     options: shuffle([seed.blank.answer, ...seed.blank.distractors]),
-    note: seed.blank.note,
+    ...(seed.blank.note ? { note: seed.blank.note } : {}),
     grammarId,
   };
 }
@@ -103,7 +103,7 @@ export function checkAnswer(exercise: Exercise, given: string): boolean {
 
 /** Build a full lesson: learn the words, then use them in sentences. */
 export function buildLesson(lesson: Lesson): Exercise[] {
-  const words = lesson.vocab.map((id) => vocabById[id]).filter(Boolean);
+  const words = lesson.vocab.map((id) => vocabById[id]).filter((v): v is VocabEntry => Boolean(v));
   const intro = words.map(vocabRecognition);
   const recall = shuffle(words).slice(0, Math.max(2, Math.ceil(words.length / 2))).map(vocabRecall);
 
@@ -122,7 +122,7 @@ export function buildLesson(lesson: Lesson): Exercise[] {
 export function buildPractice(dueWordIds: string[], weakSkills: SkillId[], allSentences: { seed: SentenceSeed; grammarId: string }[], size = 12): Exercise[] {
   const wordExercises = dueWordIds
     .map((id) => vocabById[id])
-    .filter(Boolean)
+    .filter((v): v is VocabEntry => Boolean(v))
     .map((w, i) => (i % 2 === 0 ? vocabRecognition(w) : vocabRecall(w)));
 
   const weighted = allSentences.filter(({ seed }) => weakSkills.includes(seed.skill));
