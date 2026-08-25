@@ -37,6 +37,8 @@ export interface ReviewItem {
   options?: string[];
   tokens?: string[];
   note?: string;
+  audioText?: string;
+  explanation?: string;
   wordId?: string;
   grammarId?: string;
   addedAt: number;

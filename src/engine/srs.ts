@@ -82,6 +82,8 @@ export function makeReviewItem(ex: Exercise, now = Date.now()): ReviewItem {
     ...(ex.options ? { options: ex.options } : {}),
     ...(ex.tokens ? { tokens: ex.tokens } : {}),
     ...(ex.note ? { note: ex.note } : {}),
+    ...(ex.audioText ? { audioText: ex.audioText } : {}),
+    ...(ex.explanation ? { explanation: ex.explanation } : {}),
     ...(ex.wordId ? { wordId: ex.wordId } : {}),
     ...(ex.grammarId ? { grammarId: ex.grammarId } : {}),
     addedAt: now,
@@ -143,6 +145,8 @@ export function reviewToExercise(item: ReviewItem): Exercise {
     ...(item.options ? { options: item.options } : {}),
     ...(item.tokens ? { tokens: item.tokens } : {}),
     ...(item.note ? { note: item.note } : {}),
+    ...(item.audioText ? { audioText: item.audioText } : {}),
+    ...(item.explanation ? { explanation: item.explanation } : {}),
     ...(item.wordId ? { wordId: item.wordId } : {}),
     ...(item.grammarId ? { grammarId: item.grammarId } : {}),
   };

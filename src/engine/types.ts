@@ -5,7 +5,11 @@ export type ExerciseKind =
   | "vocab_en_ru"
   | "fill"
   | "order"
-  | "translate";
+  | "translate"
+  | "listening"
+  | "case_choice"
+  | "gender_choice"
+  | "conjugation";
 
 export interface Exercise {
   id: string;
@@ -15,12 +19,15 @@ export interface Exercise {
   instruction: string;
   /** Main prompt (Russian or English depending on kind) */
   prompt: string;
-  /** Secondary line, e.g. English gloss */
+  /** Secondary line, e.g. English gloss or hint */
   sub?: string;
   answer: string;
   options?: string[];
   tokens?: string[];
   note?: string;
+  audioText?: string;
+  explanation?: string;
   wordId?: string;
   grammarId?: string;
 }
+

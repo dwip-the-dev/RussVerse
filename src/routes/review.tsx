@@ -1,22 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CheckCircle2, Flame, RotateCcw, Sparkles, Volume2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app/AppShell";
 import { ExercisePlayer } from "@/components/app/ExercisePlayer";
+import { SKILLS, type SkillId } from "@/data/grammar";
 import { dueReviewCards, reviewToExercise } from "@/engine/srs";
 import { useAppState } from "@/hooks/useAppState";
+import { speakRussian } from "@/lib/sound";
+import { cn } from "@/lib/utils";
 import { DAY, REVIEW_TARGET } from "@/storage/appState";
 
 export const Route = createFileRoute("/review")({
   head: () => ({
     meta: [
-      { title: "Review missed — РУ Course" },
+      { title: "Review Missed Deck — RussVerse" },
       {
         name: "description",
-        content: "Every question you got wrong becomes a flashcard: answer it correctly 3 times within 7 days to clear it.",
+        content:
+          "Mistake-driven spaced repetition deck: every mistake becomes a card. Answer correctly 3 times within 7 days to graduate.",
       },
-      { property: "og:title", content: "Review missed — РУ Course" },
-      { property: "og:description", content: "Flashcards from your mistakes: 3 correct answers in 7 days to clear." },
+      { property: "og:title", content: "Review Missed Deck — RussVerse" },
+      {
+        property: "og:description",
+        content: "Turn your Russian mistakes into permanent mastery with the 7-day graduation cycle.",
+      },
     ],
   }),
   component: Review,
@@ -25,11 +33,14 @@ export const Route = createFileRoute("/review")({
 function Review() {
   const { state } = useAppState();
   const [phase, setPhase] = useState<"intro" | "play" | "done">("intro");
+  const [filterSkill, setFilterSkill] = useState<SkillId | "ALL">("ALL");
   const [result, setResult] = useState({ correct: 0, total: 0, xp: 0 });
 
-  const cards = Object.values(state.progress.review);
-  const due = dueReviewCards(state.progress.review);
-  const exercises = useMemo(() => due.slice(0, 15).map(reviewToExercise), [phase === "play"]);
+  const allCards = Object.values(state.progress.review);
+  const cards = filterSkill === "ALL" ? allCards : allCards.filter((c) => c.skill === filterSkill);
+  const due = dueReviewCards(state.progress.review).filter((c) => (filterSkill === "ALL" ? true : c.skill === filterSkill));
+
+  const exercises = useMemo(() => due.slice(0, 15).map(reviewToExercise), [phase === "play", due]);
 
   if (phase === "play" && exercises.length > 0) {
     return (
@@ -37,7 +48,7 @@ function Review() {
         <ExercisePlayer
           exercises={exercises}
           mode="review"
-          title="Review missed"
+          title="Review Missed Deck"
           onFinish={(r) => {
             setResult(r);
             setPhase("done");
@@ -50,17 +61,22 @@ function Review() {
   if (phase === "done") {
     return (
       <AppShell>
-        <div className="pt-10 text-center">
-          <p className="font-display text-5xl font-bold">Готово!</p>
-          <p className="mt-2 text-muted-foreground">
-            {result.correct} / {result.total} correct · +{result.xp} XP
+        <div className="pt-8 text-center max-w-md mx-auto">
+          <span className="inline-block border-2 border-ink bg-gold px-3 py-1 font-display text-xs font-bold uppercase tracking-wider text-accent-foreground shadow-[var(--shadow-hard-sm)]">
+            Review Session Complete
+          </span>
+          <h2 className="mt-3 font-display text-4xl font-black">Готово! (Well Done!)</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {result.correct} / {result.total} cards answered correctly · +{result.xp} XP
           </p>
-          <button
-            onClick={() => setPhase("intro")}
-            className="mt-6 w-full border-2 border-ink bg-primary py-3 font-bold text-primary-foreground shadow-[var(--shadow-hard)]"
-          >
-            Back to deck
-          </button>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <button
+              onClick={() => setPhase("intro")}
+              className="w-full border-2 border-ink bg-primary py-3.5 font-display text-base font-bold text-primary-foreground shadow-[var(--shadow-hard)] active:translate-x-[2px] active:translate-y-[2px] cursor-pointer"
+            >
+              Back to Review Deck
+            </button>
+          </div>
         </div>
       </AppShell>
     );
@@ -68,56 +84,149 @@ function Review() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-bold">Review missed</h1>
-      <p className="text-sm text-muted-foreground">
-        Anything you get wrong lands here. Answer a card correctly {REVIEW_TARGET} times inside 7 days and it graduates.
-        Miss the deadline and the counter restarts.
-      </p>
+      <div>
+        <h1 className="font-display text-3xl font-black tracking-tight">Review Missed Deck</h1>
+        <p className="text-sm text-muted-foreground">
+          Every question missed in a lesson or drill enters this deck. Answer each card correctly {REVIEW_TARGET} times within a 7-day window to graduate it permanently.
+        </p>
+      </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard-sm)]">
-          <p className="font-display text-2xl font-bold">{due.length}</p>
-          <p className="text-sm font-semibold">due now</p>
+      {/* Stats Cards */}
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">Due Right Now</span>
+            <span className="size-2 rounded-full bg-primary animate-ping" />
+          </div>
+          <p className="mt-2 font-display text-3xl font-black">{due.length}</p>
+          <p className="text-xs font-semibold text-muted-foreground">Cards ready for review</p>
         </div>
-        <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard-sm)]">
-          <p className="font-display text-2xl font-bold">{cards.length}</p>
-          <p className="text-sm font-semibold">in the deck</p>
+
+        <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)]">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total In Deck</span>
+          <p className="mt-2 font-display text-3xl font-black">{allCards.length}</p>
+          <p className="text-xs font-semibold text-muted-foreground">Active learning cards</p>
         </div>
       </div>
 
+      {/* Start Review Action */}
       <button
         disabled={due.length === 0}
         onClick={() => setPhase("play")}
-        className="mt-4 w-full border-2 border-ink bg-primary py-4 font-display text-lg font-bold text-primary-foreground shadow-[var(--shadow-hard)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+        className={cn(
+          "mt-4 w-full border-2 border-ink py-4 font-display text-base font-bold uppercase tracking-wider shadow-[var(--shadow-hard)] transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer",
+          due.length > 0
+            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+            : "bg-muted text-muted-foreground cursor-not-allowed shadow-none",
+        )}
       >
-        {due.length > 0 ? `Review ${Math.min(due.length, 15)} cards` : "Nothing due — nice"}
+        {due.length > 0 ? `Повторить ${Math.min(due.length, 15)} карточек (Review ${Math.min(due.length, 15)} Cards)` : "🎉 No Cards Due Right Now!"}
       </button>
 
-      <h2 className="mt-7 font-display text-lg font-bold">Deck</h2>
+      {/* Skill Filters */}
+      <div className="mt-7 flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold">Deck Cards</h2>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setFilterSkill("ALL")}
+            className={cn(
+              "border border-ink px-2 py-0.5 text-xs font-bold shadow-[1px_1px_0_0_var(--ink)] cursor-pointer",
+              filterSkill === "ALL" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+            )}
+          >
+            All ({allCards.length})
+          </button>
+          {SKILLS.map((s) => {
+            const count = allCards.filter((c) => c.skill === s.id).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setFilterSkill(s.id)}
+                className={cn(
+                  "border border-ink px-2 py-0.5 text-xs font-bold shadow-[1px_1px_0_0_var(--ink)] cursor-pointer",
+                  filterSkill === s.id ? "bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+                )}
+              >
+                {s.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {cards.length === 0 && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          Empty deck. Every mistake in a lesson or drill shows up here automatically.
-        </p>
+        <div className="mt-4 border-2 border-dashed border-ink bg-card p-6 text-center">
+          <CheckCircle2 className="mx-auto size-8 text-success" />
+          <p className="mt-2 font-display text-lg font-bold">Чисто! (Deck is clean)</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Any questions you get wrong in lessons or practice drills will automatically land here for scheduled review.
+          </p>
+        </div>
       )}
-      <div className="mt-3 grid gap-2">
+
+      {/* Cards List */}
+      <div className="mt-3 grid gap-2.5">
         {cards
           .sort((a, b) => a.deadline - b.deadline)
           .map((c) => {
             const daysLeft = Math.max(0, Math.ceil((c.deadline - Date.now()) / DAY));
+            const isReady = c.dueAt <= Date.now();
             return (
-              <article key={c.id} className="border-2 border-ink bg-card p-3 shadow-[var(--shadow-hard-sm)]">
-                <p className="text-xs font-bold uppercase tracking-widest text-primary">{c.instruction}</p>
-                <p className="font-display font-bold">{c.prompt}</p>
-                <p className="text-sm text-muted-foreground">→ {c.answer}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  {Array.from({ length: REVIEW_TARGET }).map((_, k) => (
-                    <span
-                      key={k}
-                      className={`h-2 w-8 border-2 border-ink ${k < c.cleared ? "bg-success" : "bg-background"}`}
-                    />
-                  ))}
-                  <span className="ml-auto text-xs font-semibold text-muted-foreground">
-                    {daysLeft}d left · {c.lapses} lapses
+              <article key={c.id} className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard-sm)]">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="uppercase tracking-wider text-primary">{c.instruction}</span>
+                  <span
+                    className={cn(
+                      "border px-2 py-0.5 text-[10px] font-mono",
+                      isReady ? "border-primary bg-primary text-primary-foreground" : "border-ink bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {isReady ? "DUE NOW" : `Next: in ${Math.max(1, Math.ceil((c.dueAt - Date.now()) / 3600000))}h`}
+                  </span>
+                </div>
+
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="font-display text-lg font-bold">{c.prompt}</p>
+                  {c.audioText && (
+                    <button
+                      onClick={() => speakRussian(c.audioText!)}
+                      className="size-7 shrink-0 grid place-items-center border border-ink bg-gold text-accent-foreground shadow-[1px_1px_0_0_var(--ink)] cursor-pointer hover:bg-gold/90"
+                    >
+                      <Volume2 className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <p className="mt-0.5 text-sm font-semibold text-success">
+                  Правильно: <span className="font-bold">{c.answer}</span>
+                </p>
+
+                {c.explanation && (
+                  <p className="mt-1 text-xs text-muted-foreground italic">
+                    💡 {c.explanation}
+                  </p>
+                )}
+
+                {/* Progress Indicators (3 boxes for target 3) */}
+                <div className="mt-3 flex items-center justify-between border-t border-ink/20 pt-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-muted-foreground mr-1">Progress:</span>
+                    {Array.from({ length: REVIEW_TARGET }).map((_, k) => (
+                      <span
+                        key={k}
+                        className={cn(
+                          "size-3 border border-ink",
+                          k < c.cleared ? "bg-success" : "bg-background",
+                        )}
+                      />
+                    ))}
+                    <span className="text-[11px] font-mono font-bold text-muted-foreground ml-1">
+                      {c.cleared}/{REVIEW_TARGET}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-muted-foreground font-mono">
+                    {daysLeft}d window · {c.lapses} lapse{c.lapses !== 1 ? "s" : ""}
                   </span>
                 </div>
               </article>
@@ -127,3 +236,4 @@ function Review() {
     </AppShell>
   );
 }
+
