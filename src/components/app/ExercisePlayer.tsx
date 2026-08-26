@@ -1,7 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
-import { Check, HelpCircle, Keyboard, Play, RotateCcw, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Check,
+  CheckCircle2,
+  HelpCircle,
+  Keyboard,
+  Mic,
+  MicOff,
+  Play,
+  RotateCcw,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  X,
+  Zap,
+} from "lucide-react";
 
-import { checkAnswer, diagnoseMistake, shuffle } from "@/engine/exerciseEngine";
+import { calculateSimilarity, checkAnswer, diagnoseMistake, normalise, shuffle } from "@/engine/exerciseEngine";
 import type { Exercise } from "@/engine/types";
 import { useAppState } from "@/hooks/useAppState";
 import { playSound, speakRussian, speakText } from "@/lib/sound";
@@ -14,7 +28,17 @@ interface Props {
   onFinish: (result: { correct: number; total: number; xp: number }) => void;
 }
 
-const CYRILLIC_HELP_KEYS = ["а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й", "к", "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я"];
+const CYRILLIC_HELP_KEYS = [
+  "а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й", "к", "л", "м",
+  "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ", "ъ",
+  "ы", "ь", "э", "ю", "я",
+];
+
+// Type declaration for browser SpeechRecognition API
+interface IWindow extends Window {
+  SpeechRecognition?: any;
+  webkitSpeechRecognition?: any;
+}
 
 export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
   const { state, answer } = useAppState();
@@ -29,9 +53,23 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [speechSpeed, setSpeechSpeed] = useState<number>(0.85);
 
+  // Speech Recognition State
+  const [isListening, setIsListening] = useState(false);
+  const [speechTranscript, setSpeechTranscript] = useState("");
+  const [speechSimilarity, setSpeechSimilarity] = useState(0);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
   const ex = exercises[i];
   const pool = useMemo(() => (ex?.tokens ? shuffle(ex.tokens) : []), [ex?.id]);
   const [bank, setBank] = useState<string[]>(pool);
+
+  // Check Web Speech API support
+  const isSpeechSupported = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const win = window as IWindow;
+    return Boolean(win.SpeechRecognition || win.webkitSpeechRecognition);
+  }, []);
 
   useEffect(() => {
     setChoice(null);
@@ -41,6 +79,16 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
     setChecked(null);
     setDiagnosis(null);
     setStartedAt(Date.now());
+    setSpeechTranscript("");
+    setSpeechSimilarity(0);
+    setSpeechError(null);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
 
     // Auto-play audio for listening exercises if sound is enabled
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -51,13 +99,103 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
     }
     return () => {
       if (timer) clearTimeout(timer);
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
     };
   }, [ex?.id, pool, state.settings.sound]);
 
   if (!ex) return null;
 
-  const given = ex.options ? (choice ?? "") : ex.tokens ? built.join(" ") : typed;
+  const isSpeechMode = ex.kind === "speech_read";
+  const given = ex.options
+    ? (choice ?? "")
+    : ex.tokens
+    ? built.join(" ")
+    : isSpeechMode
+    ? (speechTranscript || typed)
+    : typed;
+
   const canCheck = given.trim().length > 0;
+
+  // Speech recognition controller
+  const startListening = () => {
+    if (!isSpeechSupported) {
+      setSpeechError("Speech recognition is not supported in this browser. You can type or use self-evaluation.");
+      return;
+    }
+    const win = window as IWindow;
+    const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
+
+    try {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      const recognition = new SpeechRecognitionClass();
+      recognition.lang = "ru-RU";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setSpeechError(null);
+        if (state.settings.sound) playSound("tap");
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = "";
+        let final = "";
+        for (let idx = 0; idx < event.results.length; idx++) {
+          const res = event.results[idx];
+          if (res.isFinal) final += res[0].transcript;
+          else interim += res[0].transcript;
+        }
+        const text = (final || interim).trim();
+        setSpeechTranscript(text);
+        setTyped(text);
+
+        const sim = calculateSimilarity(text, ex.answer);
+        setSpeechSimilarity(Math.round(sim * 100));
+      };
+
+      recognition.onerror = (event: any) => {
+        setIsListening(false);
+        if (event.error === "no-speech") {
+          setSpeechError("No speech detected. Please speak closer to the microphone and try again.");
+        } else if (event.error === "not-allowed") {
+          setSpeechError("Microphone permission denied. Please allow microphone access in your browser.");
+        } else {
+          setSpeechError(`Speech error (${event.error}). You can also self-check or type.`);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      setIsListening(false);
+      setSpeechError("Failed to access microphone. You can practice reading aloud and self-evaluate.");
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+    setIsListening(false);
+  };
 
   const submit = () => {
     if (checked !== null) {
@@ -98,7 +236,6 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
   // Keyboard shortcut listeners (1-4 for options, Enter to check/next, Space for speech)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in the input field
       const isInputFocused = document.activeElement?.tagName === "INPUT";
 
       if (e.key === "Enter") {
@@ -112,7 +249,7 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
           e.preventDefault();
           handleSelectOption(ex.options[keyNum - 1]!);
         }
-      } else if (e.code === "Space" && !isInputFocused && ex.audioText) {
+      } else if (e.code === "Space" && !isInputFocused && ex.audioText && !isListening) {
         e.preventDefault();
         speakRussian(ex.audioText, speechSpeed);
       } else if (e.key === "Backspace" && ex.tokens && built.length > 0 && checked === null) {
@@ -124,7 +261,7 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canCheck, checked, ex, built, speechSpeed, state.settings.sound]);
+  }, [canCheck, checked, ex, built, speechSpeed, state.settings.sound, isListening, given]);
 
   const insertChar = (char: string) => {
     setTyped((prev) => prev + char);
@@ -136,6 +273,15 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
 
   const progress = Math.round((i / exercises.length) * 100);
 
+  // Breakdown target words for speech evaluation
+  const targetWords = useMemo(() => {
+    return ex.answer.replace(/[.?!,]/g, "").split(/\s+/).filter(Boolean);
+  }, [ex.answer]);
+
+  const spokenWordsNorm = useMemo(() => {
+    return normalise(speechTranscript).split(/\s+/).filter(Boolean);
+  }, [speechTranscript]);
+
   return (
     <div className="flex min-h-[75vh] flex-col">
       {/* Top Exercise Header & Progress */}
@@ -146,10 +292,10 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
             {title}
           </span>
           <span className="flex items-center gap-2">
-            <span className="flex items-center gap-1 text-gold">
+            <span className="flex items-center gap-1 text-gold font-bold">
               <Zap className="size-3.5 fill-gold" /> +{score.xp} XP
             </span>
-            <span className="border border-ink bg-card px-2 py-0.5 font-mono text-foreground">
+            <span className="border border-ink bg-card px-2 py-0.5 font-mono text-foreground font-bold">
               {i + 1}/{exercises.length}
             </span>
           </span>
@@ -165,7 +311,8 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
       {/* Main Exercise Card */}
       <div className="border-2 border-ink bg-card p-5 shadow-[var(--shadow-hard)] relative">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1.5">
+            {isSpeechMode && <Mic className="size-3.5" />}
             {ex.instruction}
           </p>
           {ex.audioText && (
@@ -174,7 +321,7 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
                 type="button"
                 onClick={() => speakRussian(ex.audioText!, speechSpeed)}
                 className="flex items-center gap-1 border-2 border-ink bg-gold px-2.5 py-1 text-xs font-bold text-accent-foreground shadow-[var(--shadow-hard-sm)] hover:bg-gold/90 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
-                title="Play audio (Spacebar)"
+                title="Play model audio (Spacebar)"
               >
                 <Volume2 className="size-3.5" />
                 <span>Слушать</span>
@@ -182,26 +329,135 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
               <button
                 type="button"
                 onClick={() => {
-                  const nextSpeed = speechSpeed === 0.85 ? 0.6 : 0.85;
+                  const nextSpeed = speechSpeed === 0.85 ? 0.65 : 0.85;
                   setSpeechSpeed(nextSpeed);
                   speakRussian(ex.audioText!, nextSpeed);
                 }}
-                className="border-2 border-ink bg-background px-2 py-1 text-[11px] font-bold text-muted-foreground shadow-[var(--shadow-hard-sm)] hover:bg-muted"
+                className="border-2 border-ink bg-background px-2 py-1 text-[11px] font-bold text-muted-foreground shadow-[var(--shadow-hard-sm)] hover:bg-muted cursor-pointer"
                 title="Toggle slow playback"
               >
-                {speechSpeed < 0.8 ? "0.6x (медленно)" : "1x"}
+                {speechSpeed < 0.8 ? "0.65x (медленно)" : "1x"}
               </button>
             </div>
           )}
         </div>
 
+        {/* Prompt Header */}
         <h2 className="mt-3 font-display text-xl sm:text-2xl md:text-3xl font-bold leading-snug break-words min-w-0">
           {ex.prompt}
         </h2>
         {ex.sub && <p className="mt-1 text-sm font-medium text-muted-foreground break-words">{ex.sub}</p>}
 
-        {/* Options (Multiple Choice) */}
-        {ex.options && (
+        {/* 🎙️ 1. SPEECH & ORAL PRONUNCIATION STUDIO */}
+        {isSpeechMode && (
+          <div className="mt-6 border-2 border-ink bg-background p-4 sm:p-6 shadow-[var(--shadow-hard-sm)]">
+            <div className="text-center">
+              <span className="inline-block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                Oral Reading & Phonetics Coach
+              </span>
+
+              {/* Word-by-word Match Visualizer */}
+              <div className="my-4 flex flex-wrap justify-center gap-2">
+                {targetWords.map((w, idx) => {
+                  const normW = normalise(w);
+                  const isSpoken = spokenWordsNorm.some((sp) => sp.includes(normW) || normW.includes(sp));
+                  return (
+                    <span
+                      key={`${w}-${idx}`}
+                      className={cn(
+                        "border-2 border-ink px-3 py-1.5 font-display text-lg font-bold transition-all",
+                        isSpoken
+                          ? "bg-success text-success-foreground shadow-none"
+                          : "bg-card text-foreground shadow-[var(--shadow-hard-sm)]",
+                      )}
+                    >
+                      {w}
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Live Match Accuracy Bar */}
+              {speechSimilarity > 0 && (
+                <div className="my-3 max-w-xs mx-auto">
+                  <div className="flex justify-between text-xs font-bold mb-1">
+                    <span>Pronunciation Accuracy</span>
+                    <span className={speechSimilarity >= 70 ? "text-success font-bold" : "text-amber-500"}>
+                      {speechSimilarity}% Match {speechSimilarity >= 70 ? "· Отлично! ✨" : "· Попробуйте ещё раз"}
+                    </span>
+                  </div>
+                  <div className="h-2.5 border border-ink bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full transition-all duration-300",
+                        speechSimilarity >= 70 ? "bg-success" : "bg-amber-500",
+                      )}
+                      style={{ width: `${Math.min(100, speechSimilarity)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Spoken Transcript Live Output */}
+              {speechTranscript && (
+                <p className="my-3 text-sm font-semibold text-primary italic">
+                  Recognized: "{speechTranscript}"
+                </p>
+              )}
+
+              {/* Error Message */}
+              {speechError && (
+                <p className="my-2 text-xs font-semibold text-destructive bg-destructive/10 p-2 border border-destructive/30 rounded">
+                  {speechError}
+                </p>
+              )}
+
+              {/* Big Interactive Microphone Button */}
+              <div className="mt-5 flex flex-col items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={isListening ? stopListening : startListening}
+                  className={cn(
+                    "flex size-20 items-center justify-center rounded-full border-4 border-ink shadow-[var(--shadow-hard)] transition-all cursor-pointer",
+                    isListening
+                      ? "bg-destructive text-destructive-foreground animate-pulse scale-105"
+                      : "bg-primary text-primary-foreground hover:scale-105 hover:bg-primary/90 active:scale-95",
+                  )}
+                  title="Click to start/stop speaking in Russian"
+                >
+                  {isListening ? (
+                    <div className="flex flex-col items-center">
+                      <MicOff className="size-8 animate-bounce" />
+                    </div>
+                  ) : (
+                    <Mic className="size-8" />
+                  )}
+                </button>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {isListening ? "🔴 Слушаю... Говорите фразу (Listening now!)" : "Нажми микрофон и читай вслух (Tap mic to speak)"}
+                </p>
+
+                {/* Self-Evaluation / Fallback mode */}
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSpeechTranscript(ex.answer);
+                      setTyped(ex.answer);
+                      setSpeechSimilarity(100);
+                    }}
+                    className="border border-ink bg-muted px-3 py-1 text-xs font-bold text-muted-foreground hover:bg-muted/80 cursor-pointer"
+                  >
+                    Я прочитал чисто (I pronounced it cleanly)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 📋 2. OPTIONS (Multiple Choice) */}
+        {!isSpeechMode && ex.options && (
           <div className="mt-5 grid gap-2.5">
             {ex.options.map((opt, idx) => {
               const isSelected = choice === opt;
@@ -241,8 +497,8 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
           </div>
         )}
 
-        {/* Word Ordering Tokens */}
-        {ex.tokens && (
+        {/* 🧩 3. WORD ORDERING TOKENS */}
+        {!isSpeechMode && ex.tokens && (
           <div className="mt-5">
             <div className="min-h-16 border-2 border-dashed border-ink bg-background p-3 rounded-none">
               <div className="flex flex-wrap gap-2">
@@ -293,8 +549,8 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
           </div>
         )}
 
-        {/* Translation Input with Virtual Keyboard Assistant */}
-        {!ex.options && !ex.tokens && (
+        {/* ⌨️ 4. TRANSLATION INPUT WITH VIRTUAL KEYBOARD */}
+        {!isSpeechMode && !ex.options && !ex.tokens && (
           <div className="mt-5">
             <div className="relative">
               <input
@@ -308,7 +564,7 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
               <button
                 type="button"
                 onClick={() => setShowKeyboard(!showKeyboard)}
-                className="absolute right-2 top-2.5 flex items-center gap-1 border border-ink bg-muted px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted/80"
+                className="absolute right-2 top-2.5 flex items-center gap-1 border border-ink bg-muted px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted/80 cursor-pointer"
               >
                 <Keyboard className="size-3.5" />
                 <span className="hidden sm:inline">Буквы</span>
@@ -327,7 +583,7 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
                       key={char}
                       type="button"
                       onClick={() => insertChar(char)}
-                      className="size-8 border border-ink bg-card font-mono text-sm font-bold shadow-[1px_1px_0_0_var(--ink)] active:translate-x-[1px] active:translate-y-[1px] hover:bg-primary/20"
+                      className="size-8 border border-ink bg-card font-mono text-sm font-bold shadow-[1px_1px_0_0_var(--ink)] active:translate-x-[1px] active:translate-y-[1px] hover:bg-primary/20 cursor-pointer"
                     >
                       {char}
                     </button>
@@ -339,7 +595,7 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
         )}
       </div>
 
-      {/* Answer Feedback Banner with Linguistic Diagnostic */}
+      {/* Answer Feedback Banner with Linguistic Diagnostic & Memory Analytics */}
       {checked !== null && (
         <div
           className={cn(
@@ -354,9 +610,14 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
               <X className="mt-0.5 size-6 shrink-0 stroke-[3]" />
             )}
             <div className="space-y-1">
-              <p className="font-display text-lg font-bold">
-                {checked ? "Отлично! (Correct)" : "Неправильно (Incorrect)"}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-display text-lg font-bold">
+                  {checked ? "Отлично! (Correct & Mastered)" : "Неправильно (Reinforce Pattern)"}
+                </p>
+                <span className="border border-current px-2 py-0.5 text-xs font-mono font-bold">
+                  {checked ? "+XP & Retention Boosted" : "FSRS Memory Rescheduled"}
+                </span>
+              </div>
               {!checked && (
                 <div className="space-y-1 text-sm font-medium">
                   <p>
@@ -392,10 +653,13 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
               : "bg-primary hover:bg-primary/90",
           )}
         >
-          {checked === null ? "Проверить (Check)" : i + 1 >= exercises.length ? "Завершить (Finish)" : "Дальше (Continue) →"}
+          {checked === null
+            ? isSpeechMode ? "Проверить произношение (Check Speech)" : "Проверить (Check)"
+            : i + 1 >= exercises.length
+            ? "Завершить (Finish)"
+            : "Дальше (Continue) →"}
         </button>
       </div>
     </div>
   );
 }
-

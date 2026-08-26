@@ -9,7 +9,8 @@ export type ExerciseKind =
   | "listening"
   | "case_choice"
   | "gender_choice"
-  | "conjugation";
+  | "conjugation"
+  | "speech_read";
 
 export interface Exercise {
   id: string;

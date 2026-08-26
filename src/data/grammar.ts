@@ -12,7 +12,7 @@ export const SKILLS: { id: SkillId; label: string; iconName: string; desc: strin
 export interface GrammarPoint {
   id: string;
   title: string;
-  level: "A1" | "A2" | "B1";
+  level: "A1" | "A2" | "B1" | "B2" | "C1";
   skill: SkillId;
   requires: string[];
   explanation: string;
@@ -181,4 +181,24 @@ export const grammar: GrammarPoint[] = [
 ];
 
 export const grammarById = Object.fromEntries(grammar.map((g) => [g.id, g])) as Record<string, GrammarPoint>;
+
+export function getGrammarPoint(
+  id: string,
+  fallbackTitle = "Russian Grammar Focus",
+  level: "A1" | "A2" | "B1" | "B2" | "C1" = "A1",
+): GrammarPoint {
+  if (grammarById[id]) return grammarById[id]!;
+  return {
+    id,
+    title: fallbackTitle,
+    level,
+    skill: "cases",
+    requires: ["cyrillic"],
+    explanation: `Grammatical structure and lexical patterns for ${fallbackTitle}. Master the word endings, word order, and context usage in Russian conversation.`,
+    patterns: [
+      { ru: "Это правильная грамматическая форма.", en: "This is the correct grammatical form." },
+      { ru: "Обратите внимание на окончание и контекст.", en: "Pay attention to the ending and context." },
+    ],
+  };
+}
 

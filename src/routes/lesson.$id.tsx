@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app/AppShell";
 import { ExercisePlayer } from "@/components/app/ExercisePlayer";
-import { grammarById } from "@/data/grammar";
+import { getGrammarPoint } from "@/data/grammar";
 import { lessonById, lessons } from "@/data/lessons";
 import { vocabById } from "@/data/vocabulary";
 import { buildLesson } from "@/engine/exerciseEngine";
@@ -34,7 +34,7 @@ function LessonPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { state, completeLesson } = useAppState();
-  const lesson = lessonById[id];
+  const lesson = lessonById[id] ?? (id.startsWith("unit-") ? lessons.find((l) => l.unit === parseInt(id.replace("unit-", ""), 10)) : null);
   const [phase, setPhase] = useState<"intro" | "play" | "done">("intro");
   const [result, setResult] = useState({ correct: 0, total: 0, xp: 0 });
 
@@ -54,7 +54,7 @@ function LessonPage() {
     );
   }
 
-  const gp = grammarById[lesson.grammarId];
+  const gp = getGrammarPoint(lesson.grammarId, lesson.title, lesson.level);
   const currentIndex = lessons.findIndex((l) => l.id === lesson.id);
   const nextLesson = currentIndex >= 0 && currentIndex + 1 < lessons.length ? lessons[currentIndex + 1] : null;
 

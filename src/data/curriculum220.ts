@@ -1,0 +1,561 @@
+import type { SkillId } from "./grammar";
+
+export interface SentenceSeed {
+  /** Full correct Russian sentence */
+  ru: string;
+  /** English meaning */
+  en: string;
+  /** Which skill this sentence trains */
+  skill: SkillId;
+  /** Optional gap drill: the word to remove plus wrong choices and explanation */
+  blank?: { answer: string; distractors: string[]; note?: string };
+}
+
+export interface Lesson {
+  id: string;
+  unit: number;
+  index: number;
+  stage: number;
+  stageName: string;
+  level: "A1" | "A2" | "B1" | "B2" | "C1";
+  title: string;
+  subtitle: string;
+  grammarId: string;
+  vocab: string[];
+  sentences: SentenceSeed[];
+  xp: number;
+}
+
+export interface Stage {
+  id: number;
+  name: string;
+  level: "A1" | "A2" | "B1" | "B2" | "C1";
+  unitRange: [number, number];
+  color: string;
+  description: string;
+}
+
+export const STAGES: Stage[] = [
+  { id: 1, name: "Foundations", level: "A1", unitRange: [1, 16], color: "bg-emerald-500", description: "Greetings, Cyrillic, basic actions & core survival structures" },
+  { id: 2, name: "A1 Expansion", level: "A1", unitRange: [17, 36], color: "bg-teal-500", description: "Colors, house, professions, hobbies, friends & descriptions" },
+  { id: 3, name: "A1 → A2 Grammar", level: "A2", unitRange: [37, 56], color: "bg-amber-500", description: "Adjective genders, pronouns, negation & 6-case introduction" },
+  { id: 4, name: "A2 Vocabulary Core", level: "A2", unitRange: [57, 76], color: "bg-yellow-500", description: "Shopping, money, restaurants, Russian food & city transport" },
+  { id: 5, name: "A2 Grammar & Declensions", level: "A2", unitRange: [77, 96], color: "bg-orange-500", description: "Deep dive into 6 cases singular & plural, prepositions & animate forms" },
+  { id: 6, name: "A2 Verbs & Motion", level: "A2", unitRange: [97, 116], color: "bg-orange-600", description: "Conjugations, reflexive verbs, motion pairs & aspect introduction" },
+  { id: 7, name: "A2 Communication", level: "A2", unitRange: [117, 136], color: "bg-rose-500", description: "Making plans, invitations, polite refusals, opinions & comparisons" },
+  { id: 8, name: "B1 Grammar & Syntax", level: "B1", unitRange: [137, 156], color: "bg-sky-500", description: "Past/future deep dive, conditional mood, imperatives, clauses & conjunctions" },
+  { id: 9, name: "B1 Lexical Mastery", level: "B1", unitRange: [157, 176], color: "bg-blue-600", description: "Health, tech, programming, media, politics, careers & abstract thoughts" },
+  { id: 10, name: "B1 Listening & Speaking", level: "B1", unitRange: [177, 192], color: "bg-indigo-600", description: "Fast speech, vowel reduction, telephone calls, stories & debate" },
+  { id: 11, name: "B2 Advanced Russian", level: "B2", unitRange: [193, 210], color: "bg-purple-600", description: "Motion prefixes (в-, вы-, при-, у-), passive voice, participles & gerunds" },
+  { id: 12, name: "B2/C1 Real Russian & Boss", level: "C1", unitRange: [211, 220], color: "bg-red-600", description: "Authentic news, literature, sarcasm, idioms, slang & РУССКИЙ БОСС" },
+];
+
+export interface UnitMetadata {
+  unit: number;
+  stage: number;
+  stageName: string;
+  level: "A1" | "A2" | "B1" | "B2" | "C1";
+  title: string;
+  subtitle: string;
+  grammarId: string;
+  vocab: string[];
+  sentences: SentenceSeed[];
+  xp: number;
+}
+
+// Stage 1: Units 1-16
+export const STAGE_1_UNITS: UnitMetadata[] = [
+  {
+    unit: 1, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Hello, Russian!", subtitle: "Greetings, courtesies and Cyrillic sounds",
+    grammarId: "cyrillic", vocab: ["privet", "zdravstvuyte", "poka", "spasibo", "pozhaluysta", "izvinite", "kak_dela", "khorosho"],
+    xp: 25,
+    sentences: [
+      { ru: "Привет, как дела?", en: "Hi, how are you?", skill: "vocabulary", blank: { answer: "дела", distractors: ["дом", "день", "вода"], note: "'Как дела?' is standard informal 'how are things?'" } },
+      { ru: "Здравствуйте, спасибо!", en: "Hello, thank you!", skill: "vocabulary", blank: { answer: "Здравствуйте", distractors: ["Привет", "Пока", "До свидания"], note: "Здравствуйте is formal and polite." } },
+      { ru: "Спасибо, всё хорошо.", en: "Thank you, everything is good.", skill: "syntax" },
+      { ru: "Извините, пожалуйста.", en: "Excuse me, please.", skill: "vocabulary" },
+    ]
+  },
+  {
+    unit: 2, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Family & Relations", subtitle: "мама, папа, брат, сестра and basic introductions",
+    grammarId: "gender", vocab: ["mama", "papa", "brat", "sestra", "semya", "drug", "eto", "moy", "moya"],
+    xp: 25,
+    sentences: [
+      { ru: "Это моя мама.", en: "This is my mom.", skill: "gender", blank: { answer: "моя", distractors: ["мой", "моё", "мои"], note: "'мама' ends in -а, so it takes feminine 'моя'." } },
+      { ru: "Это мой брат.", en: "This is my brother.", skill: "gender", blank: { answer: "мой", distractors: ["моя", "моё", "мои"], note: "'брат' ends in a consonant, so it takes masculine 'мой'." } },
+      { ru: "Мой папа и моя сестра дома.", en: "My dad and my sister are at home.", skill: "syntax" },
+      { ru: "Это моя семья.", en: "This is my family.", skill: "gender" },
+    ]
+  },
+  {
+    unit: 3, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Basic Actions", subtitle: "Present-tense conjugation: читать, знать, делать",
+    grammarId: "present_tense", vocab: ["chitat", "znat", "delat", "ponimat", "ya", "ty", "on", "ona", "my", "oni"],
+    xp: 30,
+    sentences: [
+      { ru: "Я читаю книгу.", en: "I read a book.", skill: "verbs", blank: { answer: "читаю", distractors: ["читает", "читаем", "читают"], note: "1st person singular 'я' takes '-ю' (читаю)." } },
+      { ru: "Ты понимаешь по-русски?", en: "Do you understand Russian?", skill: "verbs", blank: { answer: "понимаешь", distractors: ["понимаю", "понимает", "понимаете"], note: "2nd person informal 'ты' takes '-ешь'." } },
+      { ru: "Мы знаем это слово.", en: "We know this word.", skill: "verbs" },
+      { ru: "Они делают домашнее задание.", en: "They are doing homework.", skill: "verbs" },
+    ]
+  },
+  {
+    unit: 4, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Direct Objects", subtitle: "Accusative case: книгу, воду, кофе",
+    grammarId: "accusative", vocab: ["kniga", "voda", "mashina", "kofe", "chay", "videt", "lyubit"],
+    xp: 30,
+    sentences: [
+      { ru: "Я читаю интересную книгу.", en: "I am reading an interesting book.", skill: "cases", blank: { answer: "книгу", distractors: ["книга", "книге", "книгой"], note: "Feminine nouns ending in -а change to -у in the Accusative case." } },
+      { ru: "Я пью холодную воду.", en: "I drink cold water.", skill: "cases", blank: { answer: "воду", distractors: ["вода", "воде", "водой"], note: "Feminine direct object takes '-у' (воду)." } },
+      { ru: "Я вижу новый дом.", en: "I see a new house.", skill: "cases" },
+      { ru: "Она любит чай и кофе.", en: "She loves tea and coffee.", skill: "cases" },
+    ]
+  },
+  {
+    unit: 5, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Where Do You Live?", subtitle: "Prepositional case: в / на + location",
+    grammarId: "prepositional", vocab: ["dom", "gorod", "rossiya", "moskva", "peterburg", "shkola", "zhit", "rabotat"],
+    xp: 30,
+    sentences: [
+      { ru: "Мы живём в Москве.", en: "We live in Moscow.", skill: "cases", blank: { answer: "Москве", distractors: ["Москва", "Москву", "Москвой"], note: "Location after 'в' takes Prepositional ending '-е'." } },
+      { ru: "Он работает в школе.", en: "He works at school.", skill: "cases", blank: { answer: "школе", distractors: ["школа", "школу", "школой"], note: "'в школе' (in the school) takes Prepositional '-е'." } },
+      { ru: "Я живу в красивом городе.", en: "I live in a beautiful city.", skill: "cases" },
+      { ru: "Книга лежит на столе.", en: "The book is on the table.", skill: "cases" },
+    ]
+  },
+  {
+    unit: 6, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Numbers & Counting", subtitle: "один, два, три, четыре, пять... and quantities",
+    grammarId: "numbers", vocab: ["odin", "dva", "tri", "chetyre", "pyat", "shest", "sem", "vosem", "devyat", "desyat", "sto", "skolko"],
+    xp: 30,
+    sentences: [
+      { ru: "У меня есть два брата.", en: "I have two brothers.", skill: "cases", blank: { answer: "два", distractors: ["один", "пять", "сто"], note: "Numbers 2, 3, 4 take Genitive singular." } },
+      { ru: "Сколько это стоит?", en: "How much does this cost?", skill: "vocabulary", blank: { answer: "Сколько", distractors: ["Где", "Когда", "Кто"], note: "'Сколько' asks for quantity or price." } },
+      { ru: "Тут пять книг.", en: "Here are five books.", skill: "cases" },
+      { ru: "Один, два, три, четыре, пять!", en: "One, two, three, four, five!", skill: "vocabulary" },
+    ]
+  },
+  {
+    unit: 7, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Possession & Negation", subtitle: "У меня есть / У меня нет + Genitive case",
+    grammarId: "genitive", vocab: ["u_menya_est", "net", "mashina", "vremya", "dengi", "voda", "khleb"],
+    xp: 35,
+    sentences: [
+      { ru: "У меня нет машины.", en: "I don't have a car.", skill: "cases", blank: { answer: "машины", distractors: ["машина", "машину", "машине"], note: "Negation with 'нет' requires Genitive case (машины)." } },
+      { ru: "У тебя есть время?", en: "Do you have time?", skill: "syntax", blank: { answer: "время", distractors: ["времени", "времю", "времем"], note: "Positive possession uses Nominative 'время'." } },
+      { ru: "У нас нет денег.", en: "We have no money.", skill: "cases" },
+      { ru: "У него нет друга.", en: "He has no friend.", skill: "cases" },
+    ]
+  },
+  {
+    unit: 8, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Likes & Feelings", subtitle: "Мне нравится / Мне холодно + Dative pronouns",
+    grammarId: "dative_likes", vocab: ["nravitsya", "khorosho", "plokho", "kholodno", "zharko", "mne", "tebe", "emu", "ey", "nam", "vam"],
+    xp: 35,
+    sentences: [
+      { ru: "Мне нравится русский язык.", en: "I like the Russian language.", skill: "cases", blank: { answer: "Мне", distractors: ["Я", "Меня", "Мной"], note: "'Нравится' takes the experiencer in the Dative case ('Мне')." } },
+      { ru: "Тебе холодно?", en: "Are you cold?", skill: "cases", blank: { answer: "Тебе", distractors: ["Ты", "Тебя", "Тобой"], note: "Impersonal states take Dative ('Тебе холодно')." } },
+      { ru: "Ему нравится этот фильм.", en: "He likes this movie.", skill: "cases" },
+      { ru: "Нам здесь очень тепло.", en: "We are very warm here.", skill: "cases" },
+    ]
+  },
+  {
+    unit: 9, stage: 1, stageName: "Foundations", level: "A1",
+    title: "With & Together", subtitle: "Instrumental case: с другом, с сестрой, с сахаром",
+    grammarId: "instrumental", vocab: ["s", "drug", "sestra", "brat", "moloko", "sakhar", "razgovarivat", "gulyat"],
+    xp: 35,
+    sentences: [
+      { ru: "Я гуляю с другом.", en: "I am walking with a friend.", skill: "cases", blank: { answer: "другом", distractors: ["друг", "друга", "друге"], note: "Accompaniment with 'с' takes Instrumental masculine '-ом'." } },
+      { ru: "Кофе с молоком и сахаром, пожалуйста.", en: "Coffee with milk and sugar, please.", skill: "cases", blank: { answer: "молоком", distractors: ["молоко", "молока", "молоке"], note: "Neuter Instrumental ending is '-ом'." } },
+      { ru: "Она разговаривает с сестрой.", en: "She is talking with her sister.", skill: "cases" },
+      { ru: "Мы пьём чай с лимоном.", en: "We drink tea with lemon.", skill: "cases" },
+    ]
+  },
+  {
+    unit: 10, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Verbs of Motion", subtitle: "идти / ходить (on foot) and ехать / ездить (vehicle)",
+    grammarId: "motion_verbs", vocab: ["idti", "khodit", "ekhat", "ezdit", "domoy", "v_shkolu", "na_rabotu", "seychas", "chasto"],
+    xp: 35,
+    sentences: [
+      { ru: "Сейчас я иду домой пешком.", en: "Right now I am walking home.", skill: "verbs", blank: { answer: "иду", distractors: ["хожу", "еду", "езжу"], note: "'Идти' is unidirectional motion happening right now on foot." } },
+      { ru: "Каждый день я езжу на работу.", en: "Every day I go to work by transport.", skill: "verbs", blank: { answer: "езжу", distractors: ["еду", "иду", "хожу"], note: "'Ездить' is repeated habitual motion by vehicle." } },
+      { ru: "Куда вы сейчас едете?", en: "Where are you traveling right now?", skill: "verbs" },
+      { ru: "Мы часто ходим в парк.", en: "We often walk to the park.", skill: "verbs" },
+    ]
+  },
+  {
+    unit: 11, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Past & Future Tenses", subtitle: "читал, читала, читали and буду читать",
+    grammarId: "past_future", vocab: ["byl", "byla", "byli", "budu", "budesh", "budet", "vchera", "zavtra", "segodnya"],
+    xp: 35,
+    sentences: [
+      { ru: "Вчера он читал книгу.", en: "Yesterday he read a book.", skill: "verbs", blank: { answer: "читал", distractors: ["читала", "читало", "читали"], note: "Masculine subject takes past tense suffix '-л'." } },
+      { ru: "Завтра я буду работать.", en: "Tomorrow I will work.", skill: "verbs", blank: { answer: "буду", distractors: ["был", "будет", "будем"], note: "Compound future uses 'буду' + imperfective infinitive." } },
+      { ru: "Вчера она была дома.", en: "Yesterday she was at home.", skill: "verbs" },
+      { ru: "Мы будем учить русский язык.", en: "We will study the Russian language.", skill: "verbs" },
+    ]
+  },
+  {
+    unit: 12, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Daily Routine", subtitle: "вставать, работать, учиться, завтракать, спать",
+    grammarId: "daily_routine", vocab: ["utro", "den", "vecher", "noch", "spat", "rabotat", "otdykhat"],
+    xp: 30,
+    sentences: [
+      { ru: "Утром я встаю и пью кофе.", en: "In the morning I get up and drink coffee.", skill: "vocabulary", blank: { answer: "встаю", distractors: ["сплю", "работаю", "читаю"] } },
+      { ru: "Вечером мы отдыхаем дома.", en: "In the evening we relax at home.", skill: "vocabulary" },
+      { ru: "Ночью я крепко сплю.", en: "At night I sleep soundly.", skill: "vocabulary" },
+      { ru: "Днём он усердно работает.", en: "During the day he works hard.", skill: "vocabulary" },
+    ]
+  },
+  {
+    unit: 13, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Time & Dates", subtitle: "сегодня, завтра, вчера, в понедельник, в субботу",
+    grammarId: "time_dates", vocab: ["segodnya", "zavtra", "vchera", "ponedelnik", "subbota", "voskresenye"],
+    xp: 30,
+    sentences: [
+      { ru: "В понедельник у меня урок.", en: "On Monday I have a lesson.", skill: "cases", blank: { answer: "понедельник", distractors: ["понедельника", "понедельнике", "понедельником"] } },
+      { ru: "В субботу мы отдыхаем.", en: "On Saturday we rest.", skill: "cases" },
+      { ru: "Сегодня отличный день!", en: "Today is a great day!", skill: "syntax" },
+      { ru: "Вчера была хорошая погода.", en: "Yesterday the weather was good.", skill: "verbs" },
+    ]
+  },
+  {
+    unit: 14, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Clock & Schedules", subtitle: "Который час? В три часа, в пять часов",
+    grammarId: "clock_time", vocab: ["chas", "chasa", "chasov", "minuta", "utro", "vecher"],
+    xp: 30,
+    sentences: [
+      { ru: "Который сейчас час?", en: "What time is it now?", skill: "syntax", blank: { answer: "час", distractors: ["часа", "часов", "часу"] } },
+      { ru: "Встреча в три часа.", en: "The meeting is at three o'clock.", skill: "cases" },
+      { ru: "Поезд отправляется в пять часов.", en: "The train departs at five o'clock.", skill: "cases" },
+      { ru: "Сейчас ровно два часа.", en: "It is exactly two o'clock right now.", skill: "syntax" },
+    ]
+  },
+  {
+    unit: 15, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Weather & Nature", subtitle: "холодно, жарко, идёт дождь, идёт снег",
+    grammarId: "weather", vocab: ["pogoda", "kholodno", "zharko", "dozhd", "sneg", "solntse", "veter"],
+    xp: 30,
+    sentences: [
+      { ru: "На улице идёт дождь.", en: "It is raining outside.", skill: "vocabulary", blank: { answer: "дождь", distractors: ["снег", "ветер", "солнце"] } },
+      { ru: "Зимой в России очень холодно.", en: "In winter it is very cold in Russia.", skill: "vocabulary" },
+      { ru: "Летом здесь тепло и светит солнце.", en: "In summer it is warm here and the sun shines.", skill: "vocabulary" },
+      { ru: "Сегодня сильный ветер.", en: "Today there is a strong wind.", skill: "vocabulary" },
+    ]
+  },
+  {
+    unit: 16, stage: 1, stageName: "Foundations", level: "A1",
+    title: "Basic Adjectives", subtitle: "большой, маленький, хороший, плохой, новый, старый",
+    grammarId: "adjectives", vocab: ["bolshoy", "malenkiy", "khoroshiy", "plokhoy", "novyy", "staryy", "krasivyy"],
+    xp: 35,
+    sentences: [
+      { ru: "Это очень большой дом.", en: "This is a very big house.", skill: "gender", blank: { answer: "большой", distractors: ["большая", "большое", "большие"] } },
+      { ru: "У неё новая и красивая машина.", en: "She has a new and beautiful car.", skill: "gender" },
+      { ru: "Это хорошее и вкусное яблоко.", en: "This is a good and tasty apple.", skill: "gender" },
+      { ru: "Тут старые книги.", en: "Here are old books.", skill: "gender" },
+    ]
+  },
+];
+
+// Stages 2 to 12: Units 17 to 220
+const STAGES_2_TO_12_UNITS: Array<{
+  unit: number;
+  stage: number;
+  stageName: string;
+  level: "A1" | "A2" | "B1" | "B2" | "C1";
+  title: string;
+  subtitle: string;
+  grammarId: string;
+  vocab?: string[];
+  ru: string;
+  en: string;
+  blank: string;
+  distractors: string[];
+  skill: SkillId;
+}> = [
+  // STAGE 2: A1 Expansion (Units 17-36)
+  { unit: 17, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Colors", subtitle: "красный, синий, зелёный, белый, чёрный", grammarId: "colors", vocab: ["krasnyy", "siniy", "zelenyy", "belyy", "chernyy"], ru: "Мне нравится этот синий цвет.", en: "I like this blue color.", blank: "синий", distractors: ["красный", "белый", "чёрный"], skill: "vocabulary" },
+  { unit: 18, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Clothes", subtitle: "рубашка, куртка, обувь, платье, пальто", grammarId: "clothes", vocab: ["rubashka", "kurtka", "obuv", "plate", "palto"], ru: "Это тёплая зимняя куртка.", en: "This is a warm winter jacket.", blank: "куртка", distractors: ["рубашка", "обувь", "платье"], skill: "vocabulary" },
+  { unit: 19, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Body Parts", subtitle: "голова, рука, нога, глаза, уши, спина", grammarId: "body", vocab: ["golova", "ruka", "noga", "glaza", "ushi"], ru: "У меня болит голова.", en: "My head hurts / I have a headache.", blank: "голова", distractors: ["рука", "нога", "спина"], skill: "vocabulary" },
+  { unit: 20, stage: 2, stageName: "A1 Expansion", level: "A1", title: "House & Home", subtitle: "дом, квартира, кухня, спальня, балкон", grammarId: "house", vocab: ["dom", "kvartira", "kukhnya", "spalnya"], ru: "Мы готовим обед на кухне.", en: "We cook lunch in the kitchen.", blank: "кухне", distractors: ["кухня", "кухню", "кухней"], skill: "cases" },
+  { unit: 21, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Furniture", subtitle: "стол, стул, кровать, шкаф, диван", grammarId: "furniture", vocab: ["stol", "stul", "krovat", "shkaf", "divan"], ru: "Большой шкаф стоит в углу.", en: "The big wardrobe stands in the corner.", blank: "шкаф", distractors: ["стол", "стул", "диван"], skill: "vocabulary" },
+  { unit: 22, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Rooms & Locations", subtitle: "в комнате, на кухне, под столом, над диваном", grammarId: "spatial_preps", vocab: ["pod", "nad", "za", "pered", "v_komnate"], ru: "Кот спит под столом.", en: "The cat is sleeping under the table.", blank: "под", distractors: ["над", "в", "на"], skill: "cases" },
+  { unit: 23, stage: 2, stageName: "A1 Expansion", level: "A1", title: "School & Classes", subtitle: "урок, класс, учитель, студент, тетрадь", grammarId: "school", vocab: ["urok", "klass", "uchitel", "student"], ru: "Учитель объясняет новый урок.", en: "The teacher explains the new lesson.", blank: "учитель", distractors: ["студент", "класс", "тетрадь"], skill: "vocabulary" },
+  { unit: 24, stage: 2, stageName: "A1 Expansion", level: "A1", title: "University", subtitle: "университет, факультет, экзамен, лекция", grammarId: "university", vocab: ["universitet", "ekzamen", "lektsiya"], ru: "Завтра у нас сложный экзамен.", en: "Tomorrow we have a difficult exam.", blank: "экзамен", distractors: ["лекция", "факультет", "урок"], skill: "vocabulary" },
+  { unit: 25, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Work & Office", subtitle: "работа, офис, начальник, коллега, проект", grammarId: "office", vocab: ["rabota", "ofis", "nachalnik", "kollega"], ru: "Я работаю в современном офисе.", en: "I work in a modern office.", blank: "офисе", distractors: ["офис", "офиса", "офисом"], skill: "cases" },
+  { unit: 26, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Professions", subtitle: "врач, инженер, учитель, программист, юрист", grammarId: "professions", vocab: ["vrach", "inzhener", "programmist", "yurist"], ru: "Мой брат опытный программист.", en: "My brother is an experienced programmer.", blank: "программист", distractors: ["врач", "учитель", "юрист"], skill: "vocabulary" },
+  { unit: 27, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Hobbies & Pastimes", subtitle: "читать, рисовать, играть, смотреть, готовить", grammarId: "hobbies", vocab: ["risovat", "igrat", "smotret", "chitat"], ru: "В свободное время я люблю рисовать.", en: "In my free time I love to draw.", blank: "рисовать", distractors: ["играть", "читать", "спать"], skill: "vocabulary" },
+  { unit: 28, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Sports & Athletics", subtitle: "футбол, теннис, бег, плавание, зал", grammarId: "sports", vocab: ["futbol", "tennis", "beg", "plavanie"], ru: "Мы играем в футбол по субботам.", en: "We play soccer on Saturdays.", blank: "футбол", distractors: ["теннис", "бег", "плавание"], skill: "vocabulary" },
+  { unit: 29, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Music & Concerts", subtitle: "песня, музыка, группа, концерт, гитара", grammarId: "music", vocab: ["pesnya", "muzyka", "gruppa", "kontsert"], ru: "Эта русская песня очень красивая.", en: "This Russian song is very beautiful.", blank: "песня", distractors: ["музыка", "группа", "концерт"], skill: "vocabulary" },
+  { unit: 30, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Movies & TV", subtitle: "фильм, сериал, кинотеатр, смотреть, актёр", grammarId: "movies", vocab: ["film", "serial", "kinoteatr", "akter"], ru: "Мы смотрим интересный сериал.", en: "We are watching an interesting TV series.", blank: "смотрим", distractors: ["читаем", "слушаем", "пишем"], skill: "verbs" },
+  { unit: 31, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Free Time", subtitle: "отдыхать, гулять, встречаться, гулять в парке", grammarId: "free_time", vocab: ["otdykhat", "gulyat", "vstrechatsya"], ru: "В выходные мы любим гулять в парке.", en: "On the weekend we love walking in the park.", blank: "гулять", distractors: ["работать", "учить", "писать"], skill: "verbs" },
+  { unit: 32, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Friends & Company", subtitle: "друг, подруга, вместе, рядом, компания", grammarId: "friends", vocab: ["drug", "podruga", "vmeste", "ryadom"], ru: "Мы всегда делаем проекты вместе.", en: "We always do projects together.", blank: "вместе", distractors: ["рядом", "быстро", "долго"], skill: "vocabulary" },
+  { unit: 33, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Introductions", subtitle: "Как тебя зовут? Меня зовут..., Очень приятно", grammarId: "introductions", vocab: ["zovut", "priyatno", "znakomstvo"], ru: "Как вас зовут? — Меня зовут Анна.", en: "What is your name? — My name is Anna.", blank: "зовут", distractors: ["знают", "видят", "слышат"], skill: "syntax" },
+  { unit: 34, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Talking About Yourself", subtitle: "возраст, национальность, интересы, язык", grammarId: "about_self", vocab: ["vozrast", "natsionalnost", "interes"], ru: "Сколько тебе лет? — Мне двадцать лет.", en: "How old are you? — I am twenty years old.", blank: "лет", distractors: ["год", "года", "годы"], skill: "cases" },
+  { unit: 35, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Describing People", subtitle: "высокий, молодой, добрый, умный, весёлый", grammarId: "describing_people", vocab: ["vysokiy", "molodoy", "dobryy", "umnyy"], ru: "Он очень добрый и умный человек.", en: "He is a very kind and smart person.", blank: "добрый", distractors: ["добрая", "доброе", "добрые"], skill: "gender" },
+  { unit: 36, stage: 2, stageName: "A1 Expansion", level: "A1", title: "Describing Things", subtitle: "новый, старый, красивый, дорогой, дешёвый", grammarId: "describing_things", vocab: ["dorogoy", "deshevyy", "krasivyy"], ru: "Эта новая машина слишком дорогая.", en: "This new car is too expensive.", blank: "дорогая", distractors: ["дорогой", "дорогое", "дорогие"], skill: "gender" },
+
+  // STAGE 3: A1 → A2 Grammar (Units 37-56)
+  { unit: 37, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Adjective Gender", subtitle: "новый (m) / новая (f) / новое (n)", grammarId: "adj_gender", vocab: ["novyy", "novaya", "novoe"], ru: "Это новое окно в комнате.", en: "This is a new window in the room.", blank: "новое", distractors: ["новый", "новая", "новые"], skill: "gender" },
+  { unit: 38, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Adjective Plurals", subtitle: "новые, большие, хорошие, русские", grammarId: "adj_plurals", vocab: ["novye", "bolshie", "khoroshie"], ru: "Здесь продаются новые русские книги.", en: "New Russian books are sold here.", blank: "новые", distractors: ["новый", "новая", "новое"], skill: "gender" },
+  { unit: 39, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Possessive Adjectives", subtitle: "мой, твой, наш, ваш, его, её, их", grammarId: "possessives", vocab: ["moy", "tvoy", "nash", "vash"], ru: "Это наш общий проект.", en: "This is our shared project.", blank: "наш", distractors: ["наша", "наше", "наши"], skill: "gender" },
+  { unit: 40, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Demonstratives", subtitle: "этот (m), эта (f), это (n), эти (pl)", grammarId: "demonstratives", vocab: ["etot", "eta", "eto", "eti"], ru: "Эта задача очень интересная.", en: "This task is very interesting.", blank: "Эта", distractors: ["Этот", "Это", "Эти"], skill: "gender" },
+  { unit: 41, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Personal Pronouns", subtitle: "я, ты, он, она, оно, мы, вы, они", grammarId: "pronouns", vocab: ["ya", "ty", "on", "ona", "my", "vy", "oni"], ru: "Мы изучаем русский язык каждый день.", en: "We study the Russian language every day.", blank: "Мы", distractors: ["Я", "Ты", "Они"], skill: "syntax" },
+  { unit: 42, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Object Pronouns", subtitle: "меня, тебя, его, её, нас, вас, их", grammarId: "object_pronouns", vocab: ["menya", "tebya", "ego", "ee", "nas", "vas"], ru: "Он видит меня на улице.", en: "He sees me on the street.", blank: "меня", distractors: ["я", "мне", "мной"], skill: "cases" },
+  { unit: 43, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Reflexive себя", subtitle: "себя, себе, собой, о себе", grammarId: "reflexive_sebya", vocab: ["sebya", "sebe", "soboy"], ru: "Он купил себе новую книгу.", en: "He bought himself a new book.", blank: "себе", distractors: ["себя", "собой", "его"], skill: "cases" },
+  { unit: 44, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Negation: не vs нет", subtitle: "Я не знаю (verb) vs У меня нет (absence)", grammarId: "negation_rules", vocab: ["ne", "net"], ru: "Я не понимаю это длинное слово.", en: "I do not understand this long word.", blank: "не", distractors: ["нет", "ни", "без"], skill: "syntax" },
+  { unit: 45, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Double Negation", subtitle: "никто не, ничего не, никогда не", grammarId: "double_negation", vocab: ["nikto", "nichego", "nikogda"], ru: "Никто не знает точный ответ.", en: "Nobody knows the exact answer.", blank: "Никто", distractors: ["Кто", "Все", "Кое-кто"], skill: "syntax" },
+  { unit: 46, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Question Words", subtitle: "кто, что, где, когда, почему, зачем", grammarId: "question_words", vocab: ["kto", "chto", "gde", "kogda", "pochemu"], ru: "Почему ты не пришёл вчера на встречу?", en: "Why did you not come to the meeting yesterday?", blank: "Почему", distractors: ["Где", "Кто", "Когда"], skill: "syntax" },
+  { unit: 47, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "How Questions Work", subtitle: "как, какой, какая, какое, какие, который", grammarId: "question_modifiers", vocab: ["kak", "kakoy", "kakaya", "kotoryy"], ru: "Какая сегодня погода на улице?", en: "What is the weather like outside today?", blank: "Какая", distractors: ["Какой", "Какое", "Какие"], skill: "gender" },
+  { unit: 48, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Genitive Introduction", subtitle: "нет друга, стакан воды, чашка чая", grammarId: "genitive_intro", vocab: ["stakan_vody", "chashka_chaya"], ru: "Дайте мне стакан холодной воды.", en: "Give me a glass of cold water.", blank: "воды", distractors: ["вода", "воду", "воде"], skill: "cases" },
+  { unit: 49, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Genitive Possession", subtitle: "книга брата, машина папы, дом друга", grammarId: "genitive_poss", vocab: ["kniga_brata", "dom_druga"], ru: "Это машина моего старшего брата.", en: "This is my older brother's car.", blank: "брата", distractors: ["брат", "брату", "братом"], skill: "cases" },
+  { unit: 50, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Quantity + Genitive", subtitle: "много воды, мало времени, пять книг", grammarId: "genitive_quant", vocab: ["mnogo", "malo", "skolko"], ru: "У нас очень мало свободного времени.", en: "We have very little free time.", blank: "времени", distractors: ["время", "временем", "времю"], skill: "cases" },
+  { unit: 51, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Dative Introduction", subtitle: "мне, тебе, ему, ей, нам, вам, им", grammarId: "dative_intro", vocab: ["mne", "tebe", "emu", "ey", "nam"], ru: "Я звоню своему другу сейчас.", en: "I am calling my friend right now.", blank: "другу", distractors: ["друг", "друга", "другом"], skill: "cases" },
+  { unit: 52, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Instrumental Introduction", subtitle: "мной, тобой, другом, сестрой, молоком", grammarId: "ins_intro", vocab: ["mnoy", "toboy", "drugom"], ru: "Он пишет синей ручкой.", en: "He writes with a blue pen.", blank: "ручкой", distractors: ["ручка", "ручку", "ручке"], skill: "cases" },
+  { unit: 53, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Prepositional Introduction", subtitle: "о России, о друге, в школе, на работе", grammarId: "prep_intro", vocab: ["o_rossii", "o_druge"], ru: "Мы долго говорили о новом фильме.", en: "We talked for a long time about the new movie.", blank: "фильме", distractors: ["фильм", "фильма", "фильмом"], skill: "cases" },
+  { unit: 54, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Case Recognition", subtitle: "Identify all six Russian cases in natural sentences", grammarId: "case_recognition", vocab: ["padezh", "forma"], ru: "В книге много картинок.", en: "In the book there are many pictures.", blank: "книге", distractors: ["книга", "книгу", "книгой"], skill: "cases" },
+  { unit: 55, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Case Endings Patterns", subtitle: "Mastering masculine, feminine and neuter declension patterns", grammarId: "case_patterns", vocab: ["okonchanie"], ru: "Я подарил цветы любимой сестре.", en: "I gave flowers to my beloved sister.", blank: "сестре", distractors: ["сестра", "сестру", "сестрой"], skill: "cases" },
+  { unit: 56, stage: 3, stageName: "A1 → A2 Grammar", level: "A2", title: "Case Challenge", subtitle: "Mixed case selection speed sprint", grammarId: "case_challenge", vocab: ["proverka"], ru: "Мы идём в музей с нашими друзьями.", en: "We are going to the museum with our friends.", blank: "музей", distractors: ["музея", "музее", "музеем"], skill: "cases" },
+
+  // STAGE 4: A2 Vocabulary Core (57-76)
+  { unit: 57, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Supermarket", subtitle: "магазин, продукты, корзина, касса", grammarId: "supermarket", vocab: ["magazin", "produkty"], ru: "Мы покупаем свежие продукты в магазине.", en: "We buy fresh groceries in the store.", blank: "продукты", distractors: ["вещи", "книги", "билеты"], skill: "vocabulary" },
+  { unit: 58, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Shopping", subtitle: "цена, покупать, продавать, скидка", grammarId: "shopping", vocab: ["tsena", "skidka"], ru: "Какая цена у этой куртки?", en: "What is the price of this jacket?", blank: "цена", distractors: ["касса", "деньги", "чек"], skill: "vocabulary" },
+  { unit: 59, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Money & Payment", subtitle: "рубль, деньги, платить картой / наличными", grammarId: "money", vocab: ["rubl", "dengi"], ru: "Можно заплатить банковской картой?", en: "Can I pay with a bank card?", blank: "картой", distractors: ["рубль", "наличные", "счёт"], skill: "cases" },
+  { unit: 60, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Restaurants", subtitle: "меню, официант, столик, счёт, чаевые", grammarId: "restaurants", vocab: ["menyu", "ofitsiant"], ru: "Официант, принесите меню, пожалуйста.", en: "Waiter, bring the menu, please.", blank: "меню", distractors: ["счёт", "столик", "деньги"], skill: "vocabulary" },
+  { unit: 61, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Russian Food", subtitle: "борщ, пельмени, блины, сырники, сметана", grammarId: "russian_food", vocab: ["borshch", "pelmeni"], ru: "Русский горячий борщ со сметаной очень вкусный.", en: "Russian hot borscht with sour cream is very tasty.", blank: "борщ", distractors: ["чай", "хлеб", "кофе"], skill: "vocabulary" },
+  { unit: 62, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Cooking", subtitle: "готовить, варить, жарить, резать", grammarId: "cooking", vocab: ["gotovit", "varit"], ru: "Я люблю готовить домашний суп.", en: "I love cooking homemade soup.", blank: "готовить", distractors: ["покупать", "пить", "есть"], skill: "verbs" },
+  { unit: 63, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Breakfast", subtitle: "завтракать, кофе, яйца, каша, тост", grammarId: "breakfast", vocab: ["zavtrak", "kasha"], ru: "Утром я ем овсяную кашу и пью кофе.", en: "In the morning I eat oatmeal and drink coffee.", blank: "кашу", distractors: ["суп", "борщ", "мясо"], skill: "cases" },
+  { unit: 64, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Lunch & Dinner", subtitle: "обедать, ужинать, суп, салат, десерт", grammarId: "lunch_dinner", vocab: ["obed", "uzhin"], ru: "В два часа мы обычно обедаем.", en: "At two o'clock we usually have lunch.", blank: "обедаем", distractors: ["завтракаем", "ужинаем", "спим"], skill: "verbs" },
+  { unit: 65, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Ordering Food", subtitle: "Я буду... / Мне, пожалуйста..., без сахара", grammarId: "ordering_food", vocab: ["zakaz"], ru: "Я буду чёрный кофе без сахара.", en: "I will have black coffee without sugar.", blank: "сахара", distractors: ["сахар", "сахару", "сахаром"], skill: "cases" },
+  { unit: 66, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "At a Café", subtitle: "можно, нельзя, ещё один, чашка чая", grammarId: "cafe_phrases", vocab: ["mozhno", "nelzya"], ru: "Можно мне ещё одну чашку чая?", en: "May I have one more cup of tea?", blank: "Можно", distractors: ["Нельзя", "Надо", "Должен"], skill: "syntax" },
+  { unit: 67, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Transportation", subtitle: "автобус, поезд, метро, трамвай, маршрутка", grammarId: "transport", vocab: ["avtobus", "metro"], ru: "Я еду на работу на метро.", en: "I go to work by metro.", blank: "метро", distractors: ["автобус", "машина", "поезд"], skill: "cases" },
+  { unit: 68, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Buying Tickets", subtitle: "билет, касса, туда и обратно, место", grammarId: "tickets", vocab: ["bilet", "kassa"], ru: "Один билет до Санкт-Петербурга, пожалуйста.", en: "One ticket to Saint Petersburg, please.", blank: "билет", distractors: ["поезд", "паспорт", "вокзал"], skill: "vocabulary" },
+  { unit: 69, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Airport & Flights", subtitle: "самолёт, аэропорт, рейс, посадка, багаж", grammarId: "airport", vocab: ["samolet", "aeroport"], ru: "Самолёт вылетает вовремя.", en: "The plane is departing on time.", blank: "Самолёт", distractors: ["Поезд", "Автобус", "Такси"], skill: "vocabulary" },
+  { unit: 70, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Train Station", subtitle: "вокзал, поезд, платформа, расписание", grammarId: "train_station", vocab: ["vokzal", "poezd"], ru: "Поезд прибывает на третью платформу.", en: "The train arrives at platform three.", blank: "платформу", distractors: ["вокзал", "поезд", "билет"], skill: "cases" },
+  { unit: 71, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Taxi & Rides", subtitle: "вызвать такси, адрес, остановка, водитель", grammarId: "taxi", vocab: ["taksi", "adres"], ru: "Мы вызвали такси до аэропорта.", en: "We ordered a taxi to the airport.", blank: "такси", distractors: ["поезд", "метро", "автобус"], skill: "vocabulary" },
+  { unit: 72, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Directions", subtitle: "налево, направо, прямо, поверните", grammarId: "directions", vocab: ["nalevo", "napravo", "pryamo"], ru: "Идите прямо, а затем поверните направо.", en: "Go straight, and then turn right.", blank: "прямо", distractors: ["налево", "направо", "назад"], skill: "syntax" },
+  { unit: 73, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "The City", subtitle: "улица, проспект, площадь, центр города", grammarId: "city_places", vocab: ["ulitsa", "ploshchad"], ru: "Красная площадь находится в центре Москвы.", en: "Red Square is located in the center of Moscow.", blank: "площадь", distractors: ["улица", "проспект", "мост"], skill: "vocabulary" },
+  { unit: 74, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Public Buildings", subtitle: "банк, аптека, музей, почта, библиотека", grammarId: "buildings", vocab: ["apteka", "muzey"], ru: "Где находится ближайшая аптека?", en: "Where is the nearest pharmacy located?", blank: "аптека", distractors: ["банк", "музей", "почта"], skill: "vocabulary" },
+  { unit: 75, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Hotel & Lodging", subtitle: "гостиница, номер, ключ, бронирование", grammarId: "hotel", vocab: ["gostinitsa", "nomer"], ru: "У нас забронирован двухместный номер.", en: "We have booked a double room.", blank: "номер", distractors: ["ключ", "отель", "билет"], skill: "vocabulary" },
+  { unit: 76, stage: 4, stageName: "A2 Vocabulary Core", level: "A2", title: "Travel Problems", subtitle: "опоздать, потерять, забыть, сломаться", grammarId: "travel_problems", vocab: ["opozdat", "poteryat"], ru: "Я боюсь опоздать на свой рейс.", en: "I am afraid of being late for my flight.", blank: "опоздать", distractors: ["потерять", "забыть", "уехать"], skill: "verbs" },
+
+  // STAGE 5: A2 Grammar & Declensions (77-96)
+  { unit: 77, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Genitive Singular", subtitle: "мужской / женский / средний patterns (-а, -я, -ы, -и)", grammarId: "gen_sing", vocab: ["pasport"], ru: "У меня нет нового паспорта.", en: "I don't have a new passport.", blank: "паспорта", distractors: ["паспорт", "паспорту", "паспортом"], skill: "cases" },
+  { unit: 78, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Genitive Plural", subtitle: "книг, друзей, городов, домов, рублей", grammarId: "gen_plur", vocab: ["park"], ru: "В этом городе много красивых парков.", en: "There are many beautiful parks in this city.", blank: "парков", distractors: ["парки", "паркам", "парками"], skill: "cases" },
+  { unit: 79, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Accusative Feminine", subtitle: "сестру, книгу, машину, новую песню", grammarId: "acc_fem", vocab: ["devushka"], ru: "Я хорошо знаю эту умную девушку.", en: "I know this smart girl well.", blank: "девушку", distractors: ["девушка", "девушке", "девушкой"], skill: "cases" },
+  { unit: 80, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Accusative Masculine", subtitle: "брата (animate) vs стол (inanimate)", grammarId: "acc_masc", vocab: ["drug"], ru: "Я вижу своего лучшего друга.", en: "I see my best friend.", blank: "друга", distractors: ["друг", "другу", "другом"], skill: "cases" },
+  { unit: 81, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Animate vs Inanimate", subtitle: "вижу студента vs вижу университет", grammarId: "animate_rule", vocab: ["professor"], ru: "Мы встретили известного профессора.", en: "We met a famous professor.", blank: "профессора", distractors: ["профессор", "профессору", "профессором"], skill: "cases" },
+  { unit: 82, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Accusative Plural", subtitle: "вижу хороших друзей vs читаю интересные книги", grammarId: "acc_plur", vocab: ["druzya"], ru: "Я вижу старых друзей на площади.", en: "I see old friends on the square.", blank: "друзей", distractors: ["друзья", "друзьям", "друзьями"], skill: "cases" },
+  { unit: 83, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Dative Singular", subtitle: "другу (-у), сестре (-е), преподавателю (-ю)", grammarId: "dat_sing", vocab: ["pismo"], ru: "Я часто пишу письма своему другу.", en: "I often write letters to my friend.", blank: "другу", distractors: ["друг", "друга", "другом"], skill: "cases" },
+  { unit: 84, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Dative Plural", subtitle: "друзьям (-ам), студентам, книгам", grammarId: "dat_plur", vocab: ["studenty"], ru: "Учитель помогает новым студентам.", en: "The teacher helps the new students.", blank: "студентам", distractors: ["студенты", "студентов", "студентами"], skill: "cases" },
+  { unit: 85, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Instrumental Singular", subtitle: "другом (-ом), сестрой (-ой), преподавателем", grammarId: "ins_sing", vocab: ["inzhener"], ru: "Мой папа работает инженером.", en: "My dad works as an engineer.", blank: "инженером", distractors: ["инженер", "инженера", "инженеру"], skill: "cases" },
+  { unit: 86, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Instrumental Plural", subtitle: "друзьями (-ами), книгами, коллегами", grammarId: "ins_plur", vocab: ["kollegi"], ru: "Мы гордимся нашими студентами.", en: "We are proud of our students.", blank: "студентами", distractors: ["студенты", "студентов", "студентам"], skill: "cases" },
+  { unit: 87, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Prepositional Singular", subtitle: "о друге (-е), в Москве, в санатории (-ии)", grammarId: "prep_sing", vocab: ["rabota"], ru: "Они долго говорили о новой работе.", en: "They talked for a long time about the new job.", blank: "работе", distractors: ["работа", "работу", "работой"], skill: "cases" },
+  { unit: 88, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Prepositional Plural", subtitle: "о друзьях (-ях), о книгах (-ах), в городах", grammarId: "prep_plur", vocab: ["goroda"], ru: "В этих городах много памятников.", en: "There are many monuments in these cities.", blank: "городах", distractors: ["города", "городов", "городами"], skill: "cases" },
+  { unit: 89, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Case Preposition Map", subtitle: "в, на, из, с, к, у, о prepositions master guide", grammarId: "preposition_map", vocab: ["predlog"], ru: "Мы вышли из тёплого дома.", en: "We came out of the warm house.", blank: "дома", distractors: ["дом", "дому", "домом"], skill: "cases" },
+  { unit: 90, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Motion + Cases", subtitle: "в Москву (Acc - destination) vs в Москве (Prep - location)", grammarId: "motion_cases", vocab: ["napravlenie"], ru: "Летом мы едем в Москву.", en: "In the summer we are going to Moscow.", blank: "Москву", distractors: ["Москва", "Москве", "Москвой"], skill: "cases" },
+  { unit: 91, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "From Places", subtitle: "из дома (Gen) vs с работы (Gen)", grammarId: "from_places", vocab: ["vozvraschatsya"], ru: "Вечером он возвращается с работы.", en: "In the evening he returns from work.", blank: "работы", distractors: ["работа", "работу", "работе"], skill: "cases" },
+  { unit: 92, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Toward People", subtitle: "идти к другу (Dat) / к врачу (Dat)", grammarId: "toward_people", vocab: ["priyom"], ru: "Завтра я иду на приём к врачу.", en: "Tomorrow I am going for an appointment to the doctor.", blank: "врачу", distractors: ["врач", "врача", "врачом"], skill: "cases" },
+  { unit: 93, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Around Locations", subtitle: "рядом с (Ins), около (Gen), возле (Gen)", grammarId: "around_locs", vocab: ["okolo"], ru: "Наш отель находится около парка.", en: "Our hotel is located near the park.", blank: "парка", distractors: ["парк", "парку", "парком"], skill: "cases" },
+  { unit: 94, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Between & Among", subtitle: "между столом и шкафом (Ins), среди людей (Gen)", grammarId: "between_among", vocab: ["mezhdu", "sredi"], ru: "Между домами находится детская площадка.", en: "Between the houses there is a playground.", blank: "домами", distractors: ["дома", "домов", "домам"], skill: "cases" },
+  { unit: 95, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Case Speedrun", subtitle: "Rapid recognition across all 6 Russian cases", grammarId: "case_speedrun", vocab: ["trenirovka"], ru: "Я восхищаюсь этим великим городом.", en: "I admire this great city.", blank: "городом", distractors: ["город", "города", "городе"], skill: "cases" },
+  { unit: 96, stage: 5, stageName: "A2 Grammar & Declensions", level: "A2", title: "Case Boss Battle", subtitle: "Multi-case master challenge", grammarId: "case_boss", vocab: ["blagodarnost"], ru: "Студент написал письмо профессору с благодарностью.", en: "The student wrote a letter to the professor with gratitude.", blank: "профессору", distractors: ["профессор", "профессора", "профессором"], skill: "cases" },
+
+  // STAGE 6: A2 Verbs & Motion (97-116)
+  { unit: 97, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "First Conjugation", subtitle: "читать, работать, играть (-ать/-ять: -ю, -ешь, -ет, -ем, -ете, -ют)", grammarId: "conj_1", vocab: ["shakhmaty"], ru: "Они играют в шахматы каждый вечер.", en: "They play chess every evening.", blank: "играют", distractors: ["играю", "играет", "играем"], skill: "verbs" },
+  { unit: 98, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Second Conjugation", subtitle: "говорить, любить, учить (-ить: -ю/-у, -ишь, -ит, -им, -ите, -ят)", grammarId: "conj_2", vocab: ["govorit"], ru: "Мы свободно говорим по-русски.", en: "We speak Russian fluently.", blank: "говорим", distractors: ["говорю", "говорит", "говорят"], skill: "verbs" },
+  { unit: 99, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Conjugation Exceptions", subtitle: "хотеть (хочу, хочешь... хотят), есть, дать", grammarId: "conj_exceptions", vocab: ["desert"], ru: "Что вы хотите заказать на десерт?", en: "What do you want to order for dessert?", blank: "хотите", distractors: ["хочешь", "хочет", "хотят"], skill: "verbs" },
+  { unit: 100, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Irregular Verbs", subtitle: "быть, идти (иду, идёшь), ехать (еду, едешь)", grammarId: "irregular_verbs", vocab: ["poezdka"], ru: "Куда ты сейчас едешь на поезде?", en: "Where are you traveling right now on the train?", blank: "едешь", distractors: ["еду", "едет", "едем"], skill: "verbs" },
+  { unit: 101, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Reflexive Verbs", subtitle: "учиться, заниматься, одеваться (-ся / -сь)", grammarId: "reflexive_verbs", vocab: ["kurs"], ru: "Она учится в университете на первом курсе.", en: "She studies at the university in her first year.", blank: "учится", distractors: ["учит", "учусь", "учатся"], skill: "verbs" },
+  { unit: 102, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Motion: идти", subtitle: "Walking in one specific direction right now", grammarId: "motion_idti", vocab: ["biblioteka"], ru: "Посмотри, он идёт в библиотеку.", en: "Look, he is walking to the library.", blank: "идёт", distractors: ["ходит", "едет", "ездит"], skill: "verbs" },
+  { unit: 103, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Motion: ходить", subtitle: "Repeated, habitual, round-trip walking", grammarId: "motion_khodit", vocab: ["sportzal"], ru: "Каждое утро я хожу в спортзал.", en: "Every morning I walk/go to the gym.", blank: "хожу", distractors: ["иду", "еду", "езжу"], skill: "verbs" },
+  { unit: 104, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Motion: ехать", subtitle: "Vehicle movement in one direction right now", grammarId: "motion_ekhat", vocab: ["marshrut"], ru: "Сейчас мы едем в Санкт-Петербург.", en: "Right now we are traveling to Saint Petersburg.", blank: "едем", distractors: ["ездим", "идём", "ходим"], skill: "verbs" },
+  { unit: 105, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Motion: ездить", subtitle: "Habitual, repeated vehicle movement", grammarId: "motion_ezdit", vocab: ["dacha"], ru: "Летом они часто ездят на дачу.", en: "In summer they often travel to the dacha.", blank: "ездят", distractors: ["едут", "идут", "ходят"], skill: "verbs" },
+  { unit: 106, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "бежать / бегать", subtitle: "Running motion pair (unidirectional vs habitual)", grammarId: "motion_begat", vocab: ["finish"], ru: "Спортсмен быстро бежит к финишу.", en: "The athlete is running quickly toward the finish line.", blank: "бежит", distractors: ["бегает", "идет", "летит"], skill: "verbs" },
+  { unit: 107, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "лететь / летать", subtitle: "Flying motion pair (unidirectional vs multidirectional)", grammarId: "motion_letat", vocab: ["ptitsy"], ru: "Птицы осенью летят на юг.", en: "Birds fly south in the autumn.", blank: "летят", distractors: ["летают", "бегут", "плывут"], skill: "verbs" },
+  { unit: 108, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "плыть / плавать", subtitle: "Swimming / sailing motion pair", grammarId: "motion_plavat", vocab: ["korabl"], ru: "Корабль плывёт по широкой реке.", en: "The ship is sailing along the wide river.", blank: "плывёт", distractors: ["плавает", "бежит", "летит"], skill: "verbs" },
+  { unit: 109, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Perfective Aspect", subtitle: "сделать, прочитать, написать (completed results)", grammarId: "pf_aspect", vocab: ["rezultat"], ru: "Я уже прочитал эту интересную книгу.", en: "I have already finished reading this interesting book.", blank: "прочитал", distractors: ["читал", "читаю", "прочитаю"], skill: "verbs" },
+  { unit: 110, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Imperfective Aspect", subtitle: "делать, читать, писать (process / repeated habit)", grammarId: "impf_aspect", vocab: ["otchet"], ru: "Весь вечер я писал отчёт.", en: "All evening I was writing the report.", blank: "писал", distractors: ["написал", "напишу", "пишу"], skill: "verbs" },
+  { unit: 111, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Aspect Recognition", subtitle: "Distinguishing process vs one-time finished result", grammarId: "aspect_rec", vocab: ["zadanie"], ru: "Ты уже сделал домашнее задание?", en: "Have you already finished your homework?", blank: "сделал", distractors: ["делал", "делаешь", "будешь делать"], skill: "verbs" },
+  { unit: 112, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Aspect in the Past", subtitle: "делал (process) vs сделал (result)", grammarId: "aspect_past", vocab: ["zadacha"], ru: "Вчера он долго решал задачу и наконец решил её.", en: "Yesterday he was solving the problem for a long time and finally solved it.", blank: "решил", distractors: ["решал", "решит", "решает"], skill: "verbs" },
+  { unit: 113, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Aspect in the Future", subtitle: "буду делать (compound) vs сделаю (simple perfective)", grammarId: "aspect_future", vocab: ["rabota"], ru: "Завтра я обязательно сделаю эту работу.", en: "Tomorrow I will definitely get this work done.", blank: "сделаю", distractors: ["буду делать", "делал", "сделал"], skill: "verbs" },
+  { unit: 114, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Common Verb Pairs", subtitle: "начинать / начать, открывать / открыть", grammarId: "verb_pairs_1", vocab: ["nachalo"], ru: "Урок начнётся ровно в девять часов.", en: "The lesson will begin at exactly nine o'clock.", blank: "начнётся", distractors: ["начинается", "начинался", "начался"], skill: "verbs" },
+  { unit: 115, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "More Verb Pairs", subtitle: "покупать / купить, помогать / помочь", grammarId: "verb_pairs_2", vocab: ["suvenir"], ru: "Я хочу купить этот сувенир.", en: "I want to buy (result) this souvenir.", blank: "купить", distractors: ["покупать", "покупаю", "куплю"], skill: "verbs" },
+  { unit: 116, stage: 6, stageName: "A2 Verbs & Motion", level: "A2", title: "Aspect Boss Battle", subtitle: "Mixed aspect & motion challenge", grammarId: "aspect_boss", vocab: ["uzhin"], ru: "Когда я пришёл домой, мама уже приготовила вкусный ужин.", en: "When I arrived home, mom had already cooked a delicious dinner.", blank: "приготовила", distractors: ["готовила", "готовит", "приготовит"], skill: "verbs" },
+
+  // STAGE 7: A2 Communication (117-136)
+  { unit: 117, stage: 7, stageName: "A2 Communication", level: "A2", title: "Making Plans", subtitle: "давай, пойдём, будем делать", grammarId: "making_plans", vocab: ["plany"], ru: "Давай пойдём в кино в субботу вечером!", en: "Let's go to the movies on Saturday evening!", blank: "Давай", distractors: ["Может", "Надо", "Если"], skill: "syntax" },
+  { unit: 118, stage: 7, stageName: "A2 Communication", level: "A2", title: "Invitations", subtitle: "Приходи ко мне в гости! Пойдём гулять!", grammarId: "invitations", vocab: ["gosti"], ru: "Приходи ко мне в гости на чай.", en: "Come visit me for tea.", blank: "Приходи", distractors: ["Иди", "Пошёл", "Пришёл"], skill: "verbs" },
+  { unit: 119, stage: 7, stageName: "A2 Communication", level: "A2", title: "Accepting Invitations", subtitle: "С удовольствием! Конечно, давай!", grammarId: "accepting_inv", vocab: ["udovolstvie"], ru: "С удовольствием пойду с вами!", en: "With pleasure I will go with you!", blank: "удовольствием", distractors: ["радость", "счастье", "интерес"], skill: "cases" },
+  { unit: 120, stage: 7, stageName: "A2 Communication", level: "A2", title: "Refusing Politely", subtitle: "Извини, к сожалению я занят / не могу", grammarId: "refusing_politely", vocab: ["otkaz"], ru: "К сожалению, сегодня вечером я занят.", en: "Unfortunately, this evening I am busy.", blank: "К сожалению", distractors: ["К счастью", "Конечно", "Пожалуйста"], skill: "syntax" },
+  { unit: 121, stage: 7, stageName: "A2 Communication", level: "A2", title: "Requests", subtitle: "Ты можешь помочь мне? Будьте добры...", grammarId: "requests", vocab: ["prosba"], ru: "Вы не могли бы передать соль?", en: "Could you please pass the salt?", blank: "могли бы", distractors: ["можете", "хотите", "будете"], skill: "syntax" },
+  { unit: 122, stage: 7, stageName: "A2 Communication", level: "A2", title: "Permission", subtitle: "Здесь можно курить? — Нет, нельзя.", grammarId: "permission", vocab: ["zapret"], ru: "Здесь нельзя громко разговаривать.", en: "It is not permitted to speak loudly here.", blank: "нельзя", distractors: ["можно", "надо", "стоит"], skill: "syntax" },
+  { unit: 123, stage: 7, stageName: "A2 Communication", level: "A2", title: "Advice", subtitle: "Тебе нужно отдохнуть / Тебе стоит почитать", grammarId: "advice", vocab: ["sovet"], ru: "Тебе стоит посмотреть этот новый фильм.", en: "It is worth your while to watch this new movie.", blank: "стоит", distractors: ["надо", "можно", "должен"], skill: "syntax" },
+  { unit: 124, stage: 7, stageName: "A2 Communication", level: "A2", title: "Obligation", subtitle: "Мне надо / Я должен сделать это", grammarId: "obligation", vocab: ["dolg"], ru: "Я должен закончить проект до завтра.", en: "I must finish the project by tomorrow.", blank: "должен", distractors: ["могу", "хочу", "люблю"], skill: "syntax" },
+  { unit: 125, stage: 7, stageName: "A2 Communication", level: "A2", title: "Ability", subtitle: "мочь (physical possibility) vs уметь (learned skill)", grammarId: "ability", vocab: ["umeniye"], ru: "Ты умеешь играть на гитаре?", en: "Do you know how to play the guitar?", blank: "умеешь", distractors: ["можешь", "хочешь", "знаешь"], skill: "verbs" },
+  { unit: 126, stage: 7, stageName: "A2 Communication", level: "A2", title: "Wanting", subtitle: "Я хочу поехать в Россию / выпить чаю", grammarId: "wanting", vocab: ["zhelanie"], ru: "Мы хотим свободно говорить по-русски.", en: "We want to speak Russian fluently.", blank: "хотим", distractors: ["хочу", "хочет", "хотят"], skill: "verbs" },
+  { unit: 127, stage: 7, stageName: "A2 Communication", level: "A2", title: "Trying", subtitle: "пытаться понять / пробовать национальные блюда", grammarId: "trying", vocab: ["popytka"], ru: "Он пытается понять сложное правило.", en: "He is trying to understand the complex rule.", blank: "пытается", distractors: ["хочет", "может", "думает"], skill: "verbs" },
+  { unit: 128, stage: 7, stageName: "A2 Communication", level: "A2", title: "Beginning & Ending", subtitle: "начинать / начать, заканчивать / закончить", grammarId: "begin_end", vocab: ["vecher"], ru: "Фильм начинается в семь часов вечера.", en: "The movie starts at seven o'clock in the evening.", blank: "начинается", distractors: ["заканчивается", "идёт", "стоит"], skill: "verbs" },
+  { unit: 129, stage: 7, stageName: "A2 Communication", level: "A2", title: "Preferences", subtitle: "Я предпочитаю кофе чаю / Я больше люблю", grammarId: "preferences", vocab: ["vybor"], ru: "Я предпочитаю зелёный чай чёрному кофе.", en: "I prefer green tea to black coffee.", blank: "предпочитаю", distractors: ["люблю", "пью", "хочу"], skill: "verbs" },
+  { unit: 130, stage: 7, stageName: "A2 Communication", level: "A2", title: "Giving Opinions", subtitle: "Я думаю, что... / По моему мнению...", grammarId: "opinions", vocab: ["mnenie"], ru: "Я думаю, что русский язык очень богатый и красивый.", en: "I think that the Russian language is very rich and beautiful.", blank: "думаю", distractors: ["знаю", "вижу", "слышу"], skill: "syntax" },
+  { unit: 131, stage: 7, stageName: "A2 Communication", level: "A2", title: "Agreement", subtitle: "Я тоже так думаю / Я полностью согласен", grammarId: "agreement", vocab: ["soglasie"], ru: "Я полностью согласен с вашим мнением.", en: "I completely agree with your opinion.", blank: "согласен", distractors: ["согласна", "согласны", "думаю"], skill: "syntax" },
+  { unit: 132, stage: 7, stageName: "A2 Communication", level: "A2", title: "Disagreement", subtitle: "Я не согласен / Мне кажется, вы не правы", grammarId: "disagreement", vocab: ["vyvod"], ru: "К сожалению, я не согласен с этим выводом.", en: "Unfortunately, I do not agree with this conclusion.", blank: "согласен", distractors: ["думаю", "знаю", "хочу"], skill: "syntax" },
+  { unit: 133, stage: 7, stageName: "A2 Communication", level: "A2", title: "Expressing Reasons", subtitle: "потому что (because) vs поэтому (therefore)", grammarId: "reasons", vocab: ["prichina"], ru: "Я учу русский, потому что люблю русскую культуру.", en: "I study Russian because I love Russian culture.", blank: "потому что", distractors: ["поэтому", "хотя", "если"], skill: "syntax" },
+  { unit: 134, stage: 7, stageName: "A2 Communication", level: "A2", title: "Contrasts", subtitle: "но (but), а (contrast), хотя (although)", grammarId: "contrasts", vocab: ["solntse"], ru: "На улице холодно, но светит яркое солнце.", en: "Outside it is cold, but the bright sun is shining.", blank: "но", distractors: ["и", "а", "или"], skill: "syntax" },
+  { unit: 135, stage: 7, stageName: "A2 Communication", level: "A2", title: "Comparisons", subtitle: "больше, меньше, лучше, хуже, дороже", grammarId: "comparisons", vocab: ["komfort"], ru: "Этот дом больше и комфортнее, чем старый.", en: "This house is bigger and more comfortable than the old one.", blank: "больше", distractors: ["большой", "самый большой", "много"], skill: "syntax" },
+  { unit: 136, stage: 7, stageName: "A2 Communication", level: "A2", title: "Conversation Survival", subtitle: "Useful everyday spoken fillers & survival phrases", grammarId: "convo_survival", vocab: ["povtorite"], ru: "Повторите, пожалуйста, ещё раз медленнее.", en: "Please repeat once more more slowly.", blank: "медленнее", distractors: ["быстрее", "громко", "тихо"], skill: "vocabulary" },
+
+  // STAGE 8: B1 Grammar (137-156)
+  { unit: 137, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Past Tense Deep Dive", subtitle: "Gender and number agreement across irregular past forms", grammarId: "past_deep", vocab: ["novosti"], ru: "Они принесли интересные новости.", en: "They brought interesting news.", blank: "принесли", distractors: ["принёс", "принесла", "принесло"], skill: "verbs" },
+  { unit: 138, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Future Tense Deep Dive", subtitle: "Compound imperfective future (буду читать, будешь писать)", grammarId: "future_deep", vocab: ["tema"], ru: "Мы будем обсуждать эту тему завтра.", en: "We will be discussing this topic tomorrow.", blank: "будем", distractors: ["буду", "будет", "будут"], skill: "verbs" },
+  { unit: 139, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Simple Future", subtitle: "сделаю, пойду, скажу (perfective one-time actions)", grammarId: "simple_future", vocab: ["pravda"], ru: "Я обязательно скажу ему правду.", en: "I will definitely tell him the truth.", blank: "скажу", distractors: ["говорю", "буду говорить", "сказал"], skill: "verbs" },
+  { unit: 140, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Conditional Mood", subtitle: "бы / было бы (Если бы я знал, я бы пришёл)", grammarId: "conditional", vocab: ["uslovie"], ru: "Если бы у меня было время, я бы прочитал эту книгу.", en: "If I had time, I would read this book.", blank: "было бы", distractors: ["было", "будет", "бы"], skill: "syntax" },
+  { unit: 141, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Imperatives", subtitle: "делай, сделай, скажи, идите, помогите", grammarId: "imperatives", vocab: ["vopros"], ru: "Пожалуйста, помогите мне с этим вопросом.", en: "Please help me with this question.", blank: "помогите", distractors: ["помогать", "помог", "поможет"], skill: "verbs" },
+  { unit: 142, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Negative Imperatives", subtitle: "не делай (prohibition) vs не забудь (warning)", grammarId: "neg_imperatives", vocab: ["skovoroda"], ru: "Не трогай горячую сковороду!", en: "Don't touch the hot frying pan!", blank: "Не трогай", distractors: ["Трогай", "Не трогал", "Трогает"], skill: "verbs" },
+  { unit: 143, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Participles Introduction", subtitle: "читающий (active present), сделанный (passive past)", grammarId: "participles_intro", vocab: ["prichastie"], ru: "Студент, читающий книгу, сидит у окна.", en: "The student reading a book is sitting by the window.", blank: "читающий", distractors: ["читает", "читал", "прочитанный"], skill: "verbs" },
+  { unit: 144, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Gerunds Introduction", subtitle: "читая (while reading), сделав (having done)", grammarId: "gerunds_intro", vocab: ["deeprichastie"], ru: "Читая книгу, он пил горячий чай.", en: "While reading the book, he was drinking hot tea.", blank: "Читая", distractors: ["Читал", "Прочитал", "Чтение"], skill: "verbs" },
+  { unit: 145, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Relative Clauses", subtitle: "который, которая, которое, которые with case agreement", grammarId: "relative_clauses", vocab: ["kotoryy"], ru: "Дом, в котором я живу, находится в центре.", en: "The house in which I live is located in the center.", blank: "котором", distractors: ["который", "которого", "которому"], skill: "cases" },
+  { unit: 146, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Complex Sentences", subtitle: "когда, если, потому что, поэтому, так как", grammarId: "complex_sentences", ru: "Так как шёл сильный дождь, мы остались дома.", en: "Since it was raining hard, we stayed home.", blank: "Так как", distractors: ["Хотя", "Если", "Чтобы"], skill: "syntax" },
+  { unit: 147, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "If Clauses", subtitle: "если + present/future реальное условие", grammarId: "if_clauses", vocab: ["pogoda"], ru: "Если погода будет хорошей, мы поедем за город.", en: "If the weather is good, we will travel out of town.", blank: "будет", distractors: ["была", "была бы", "есть"], skill: "syntax" },
+  { unit: 148, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "When Clauses", subtitle: "когда + tense consistency and sequence of events", grammarId: "when_clauses", vocab: ["perron"], ru: "Когда поезд прибыл, пассажиры вышли на перрон.", en: "When the train arrived, the passengers stepped onto the platform.", blank: "прибыл", distractors: ["прибывает", "прибудет", "прибывать"], skill: "verbs" },
+  { unit: 149, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Before & After", subtitle: "до того как (before) vs после того как (after)", grammarId: "before_after", vocab: ["svet"], ru: "Перед тем как выйти, выключи свет.", en: "Before stepping out, turn off the light.", blank: "Перед тем как", distractors: ["После того как", "Пока", "Потому что"], skill: "syntax" },
+  { unit: 150, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "While Clauses", subtitle: "пока (while / until) and ongoing simultaneous actions", grammarId: "while_clauses", ru: "Пока я готовил ужин, дети делали уроки.", en: "While I was cooking dinner, the children were doing homework.", blank: "Пока", distractors: ["Когда", "Если", "Хотя"], skill: "syntax" },
+  { unit: 151, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Although Clauses", subtitle: "хотя, несмотря на то что (concessive conjunctions)", grammarId: "although_clauses", ru: "Хотя было холодно, мы пошли на прогулку.", en: "Although it was cold, we went for a walk.", blank: "Хотя", distractors: ["Потому что", "Так как", "Чтобы"], skill: "syntax" },
+  { unit: 152, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "So That (Purpose)", subtitle: "чтобы + past tense / infinitive of purpose", grammarId: "so_that", ru: "Я позвонил другу, чтобы узнать новости.", en: "I called my friend in order to find out the news.", blank: "чтобы", distractors: ["потому что", "поэтому", "хотя"], skill: "syntax" },
+  { unit: 153, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Because vs Therefore", subtitle: "потому что (cause) vs поэтому (consequence)", grammarId: "because_therefore", ru: "Он много занимался, поэтому сдал экзамен на отлично.", en: "He studied a lot, therefore he passed the exam with top marks.", blank: "поэтому", distractors: ["потому что", "хотя", "если"], skill: "syntax" },
+  { unit: 154, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Reported Speech", subtitle: "Он сказал, что придёт завтра в полдень", grammarId: "reported_speech", vocab: ["rech"], ru: "Она сказала, что учит русский язык уже два года.", en: "She said that she has been learning Russian for two years.", blank: "сказала, что", distractors: ["спросила, где", "подумала, если", "узнала, когда"], skill: "syntax" },
+  { unit: 155, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Indirect Questions", subtitle: "Я не знаю, где находится этот музей", grammarId: "indirect_questions", vocab: ["muzey"], ru: "Вы не знаете, где находится библиотека?", en: "Do you know where the library is located?", blank: "где находится", distractors: ["что это", "кто здесь", "куда едет"], skill: "syntax" },
+  { unit: 156, stage: 8, stageName: "B1 Grammar & Syntax", level: "B1", title: "Sentence Combining", subtitle: "Building sophisticated compound multi-clause sentences", grammarId: "sentence_combining", vocab: ["sintaksis"], ru: "Хотя мы устали, мы продолжили работу, чтобы закончить вовремя.", en: "Although we were tired, we continued working so that we could finish on time.", blank: "продолжили", distractors: ["начали", "забыли", "бросили"], skill: "syntax" },
+
+  // STAGE 9: B1 Lexical Mastery (157-176)
+  { unit: 157, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Health & Medicine", subtitle: "здоровье, болезнь, симптомы, рецепт, таблетки", grammarId: "health", vocab: ["retsept", "lekarstvo"], ru: "Врач выписал рецепт на необходимые лекарства.", en: "The doctor wrote a prescription for the necessary medications.", blank: "рецепт", distractors: ["чек", "билет", "паспорт"], skill: "vocabulary" },
+  { unit: 158, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "At the Doctor", subtitle: "приём у врача, терапевт, давление, температура", grammarId: "doctor", vocab: ["davlenie", "terapevt"], ru: "Терапевт измерил пациенту давление и температуру.", en: "The general practitioner measured the patient's blood pressure and temperature.", blank: "давление", distractors: ["время", "возраст", "рост"], skill: "vocabulary" },
+  { unit: 159, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Emergencies", subtitle: "скорая помощь, полиция, пожарные, опасность", grammarId: "emergencies", vocab: ["pomoshch"], ru: "Срочно вызовите скорую помощь!", en: "Call an ambulance immediately!", blank: "скорую помощь", distractors: ["такси", "автобус", "метро"], skill: "vocabulary" },
+  { unit: 160, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Technology", subtitle: "компьютер, ноутбук, смартфон, приложение, экран", grammarId: "tech", vocab: ["prilozhenie"], ru: "Я установил новое мобильное приложение.", en: "I installed a new mobile app.", blank: "приложение", distractors: ["письмо", "сообщение", "книгу"], skill: "vocabulary" },
+  { unit: 161, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Internet & Security", subtitle: "сайт, аккаунт, надёжный пароль, безопасность", grammarId: "internet", vocab: ["parol"], ru: "Никому не сообщайте свой секретный пароль.", en: "Do not disclose your secret password to anyone.", blank: "пароль", distractors: ["логин", "адрес", "номер"], skill: "vocabulary" },
+  { unit: 162, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Programming & Code", subtitle: "программа, код, база данных, баг, алгоритм", grammarId: "programming", vocab: ["kod", "oshibka"], ru: "Программист исправил критическую ошибку в коде.", en: "The programmer fixed a critical error in the code.", blank: "ошибку", distractors: ["программу", "базу", "файл"], skill: "vocabulary" },
+  { unit: 163, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Social Media", subtitle: "публикация, комментарий, подписчик, блогер", grammarId: "social_media", vocab: ["prosmotry"], ru: "Этот интересный пост набрал тысячи просмотров.", en: "This interesting post gained thousands of views.", blank: "просмотров", distractors: ["писем", "звонков", "книг"], skill: "vocabulary" },
+  { unit: 164, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "News & Media", subtitle: "новости, журналист, интервью, репортаж, статья", grammarId: "news_media", vocab: ["statya"], ru: "Журналист опубликовал актуальную статью в газете.", en: "The journalist published a topical article in the newspaper.", blank: "статью", distractors: ["книгу", "песню", "письмо"], skill: "vocabulary" },
+  { unit: 165, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Politics & Society", subtitle: "правительство, выборы, закон, государство", grammarId: "politics", vocab: ["zakon"], ru: "Парламент принял новый важный закон.", en: "Parliament passed an important new law.", blank: "закон", distractors: ["указ", "бюджет", "налог"], skill: "vocabulary" },
+  { unit: 166, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Economy & Markets", subtitle: "инфляция, курс валют, инвестиции, рынок", grammarId: "economy", vocab: ["rynok"], ru: "Экономисты прогнозируют рост рынка.", en: "Economists forecast market growth.", blank: "рынка", distractors: ["цен", "налогов", "валюты"], skill: "cases" },
+  { unit: 167, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Environment & Climate", subtitle: "экология, природа, загрязнение, изменение климата", grammarId: "environment", vocab: ["sreda"], ru: "Важно защищать окружающую среду и природу.", en: "It is important to protect the environment and nature.", blank: "среду", distractors: ["воду", "землю", "атмосферу"], skill: "cases" },
+  { unit: 168, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Science & Research", subtitle: "исследование, учёный, открытие, лаборатория", grammarId: "science", vocab: ["eksperiment"], ru: "Учёные провели уникальный научный эксперимент.", en: "Scientists conducted a unique scientific experiment.", blank: "эксперимент", distractors: ["урок", "опыт", "анализ"], skill: "vocabulary" },
+  { unit: 169, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Higher Education", subtitle: "диплом, бакалавриат, магистратура, диссертация", grammarId: "higher_ed", vocab: ["magistratura"], ru: "После бакалавриата он поступил в магистратуру.", en: "After his bachelor's degree he entered a master's program.", blank: "магистратуру", distractors: ["школу", "колледж", "аспирантуру"], skill: "cases" },
+  { unit: 170, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Careers & Ambition", subtitle: "карьерный рост, собеседование, резюме, опыт", grammarId: "careers", vocab: ["sobesedovanie"], ru: "Она успешно прошла сложное собеседование.", en: "She successfully passed the demanding job interview.", blank: "собеседование", distractors: ["экзамен", "тест", "лекцию"], skill: "vocabulary" },
+  { unit: 171, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Relationships & Trust", subtitle: "отношения, доверие, дружба, поддержка", grammarId: "relationships", vocab: ["doverie"], ru: "Взаимное доверие — основа крепких отношений.", en: "Mutual trust is the foundation of strong relationships.", blank: "доверие", distractors: ["уважение", "любовь", "понимание"], skill: "vocabulary" },
+  { unit: 172, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Personality & Character", subtitle: "характер, трудолюбивый, скромный, ответственный", grammarId: "personality", vocab: ["otvetstvennyy"], ru: "Он очень ответственный и надёжный коллега.", en: "He is a very responsible and dependable colleague.", blank: "ответственный", distractors: ["умный", "добрый", "весёлый"], skill: "gender" },
+  { unit: 173, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Emotions & Feelings", subtitle: "радость, восторг, грусть, тревога, уверенность", grammarId: "emotions", vocab: ["radost"], ru: "Мы испытали огромную радость от победы.", en: "We felt immense joy from the victory.", blank: "радость", distractors: ["грусть", "злость", "страх"], skill: "cases" },
+  { unit: 174, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Abstract Ideas", subtitle: "концепция, гипотеза, перспектива, результат", grammarId: "abstract_ideas", vocab: ["ideya"], ru: "Эта смелая идея изменила наш подход.", en: "This bold idea changed our approach.", blank: "идея", distractors: ["мысль", "цель", "задача"], skill: "vocabulary" },
+  { unit: 175, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "Debate & Argumentation", subtitle: "аргумент, доказательство, точка зрения, факт", grammarId: "debate", vocab: ["argument"], ru: "Он привёл убедительные аргументы в дискуссии.", en: "He presented compelling arguments in the discussion.", blank: "аргументы", distractors: ["факты", "слова", "мысли"], skill: "vocabulary" },
+  { unit: 176, stage: 9, stageName: "B1 Lexical Mastery", level: "B1", title: "B1 Vocabulary Challenge", subtitle: "Comprehensive advanced lexicon sprint", grammarId: "b1_vocab_boss", vocab: ["razvitie"], ru: "Инновационные технологии способствуют развитию общества.", en: "Innovative technologies promote the development of society.", blank: "развитию", distractors: ["росту", "успеху", "прогрессу"], skill: "cases" },
+
+  // STAGE 10: B1 Listening & Speaking (177-192)
+  { unit: 177, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Slow Natural Dialogue", subtitle: "Clear speech comprehension and intonation patterns", grammarId: "slow_dialogue", vocab: ["vykhod"], ru: "Скажите, пожалуйста, где находится выход к поездам?", en: "Could you please tell me where the exit to the trains is?", blank: "выход", distractors: ["вход", "билет", "зал"], skill: "listening" },
+  { unit: 178, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Fast Conversational Russian", subtitle: "Deciphering rapid native speech rates and slurs", grammarId: "fast_dialogue", vocab: ["opazdyvat"], ru: "Слушай, мы опаздываем, пойдём скорее!", en: "Listen, we're running late, let's go faster!", blank: "опаздываем", distractors: ["идём", "бежим", "ждём"], skill: "listening" },
+  { unit: 179, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Reduced Speech & Vowels", subtitle: "Akan'ye and Ikan'ye in natural pronunciation", grammarId: "reduced_speech", vocab: ["fonetika"], ru: "Здравствуйте, рад вас снова видеть!", en: "Hello, glad to see you again!", blank: "Здравствуйте", distractors: ["Привет", "Пока", "До свидания"], skill: "listening" },
+  { unit: 180, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Informal Spoken Fillers", subtitle: "Ну, вот, типа, короче, в общем", grammarId: "informal_fillers", vocab: ["koroche"], ru: "Короче говоря, мы решили остаться дома.", en: "In short, we decided to stay home.", blank: "Короче говоря", distractors: ["Кстати", "Например", "Впрочем"], skill: "syntax" },
+  { unit: 181, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Formal Spoken Russian", subtitle: "Diplomatic, academic and corporate address", grammarId: "formal_speech", vocab: ["blagodarnost"], ru: "Позвольте выразить вам искреннюю благодарность.", en: "Allow me to express my sincere gratitude to you.", blank: "благодарность", distractors: ["радость", "мысль", "просьбу"], skill: "cases" },
+  { unit: 182, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Telephone Calls", subtitle: "Алло? Вас плохо слышно. Перезвоните, пожалуйста.", grammarId: "phone_calls", vocab: ["zvonok"], ru: "Вас плохо слышно, я перезвоню через минуту.", en: "I can barely hear you, I will call back in a minute.", blank: "перезвоню", distractors: ["напишу", "скажу", "спрошу"], skill: "verbs" },
+  { unit: 183, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Voice Messages", subtitle: "Comprehending unstructured casual audio snippets", grammarId: "voice_messages", vocab: ["messendzher"], ru: "Привет, я скинул тебе файл в мессенджере.", en: "Hi, I sent you the file in the messenger.", blank: "скинул", distractors: ["отправил", "написал", "передал"], skill: "vocabulary" },
+  { unit: 184, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Clarifications", subtitle: "Что ты имеешь в виду? Что это значит?", grammarId: "clarifications", vocab: ["utochnenie"], ru: "Что именно ты имеешь в виду?", en: "What exactly do you mean?", blank: "имеешь в виду", distractors: ["хочешь сказать", "думаешь", "знаешь"], skill: "syntax" },
+  { unit: 185, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Confirming Information", subtitle: "Я правильно понял, что мы встречаемся в пять?", grammarId: "confirmations", vocab: ["pravilno"], ru: "Я правильно вас понял?", en: "Did I understand you correctly?", blank: "правильно", distractors: ["быстро", "точно", "ясно"], skill: "syntax" },
+  { unit: 186, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Story Retelling", subtitle: "Listening to audio narratives and reconstructing plots", grammarId: "story_retelling", vocab: ["istoriya"], ru: "Вчера произошла забавная история по дороге домой.", en: "Yesterday a funny incident happened on the way home.", blank: "история", distractors: ["новость", "встреча", "беседа"], skill: "vocabulary" },
+  { unit: 187, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Scene Description", subtitle: "Articulating complex visual scenes with adjectives", grammarId: "scene_description", vocab: ["kartina"], ru: "На картине изображён осенний лес на закате.", en: "The painting depicts an autumn forest at sunset.", blank: "изображён", distractors: ["нарисован", "виден", "показан"], skill: "syntax" },
+  { unit: 188, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Personal Anecdotes", subtitle: "Narrating life experiences with past aspect nuances", grammarId: "personal_stories", vocab: ["opyt"], ru: "Когда я впервые приехал в Москву, я был поражён масштабом.", en: "When I first came to Moscow, I was amazed by the scale.", blank: "впервые", distractors: ["снова", "часто", "всегда"], skill: "vocabulary" },
+  { unit: 189, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Defending Opinions", subtitle: "Constructing persuasive spoken arguments under debate", grammarId: "defending_opinions", vocab: ["pozitsiya"], ru: "Моя позиция основана на проверенных научных данных.", en: "My position is based on verified scientific data.", blank: "основана", distractors: ["построена", "направлена", "связана"], skill: "syntax" },
+  { unit: 190, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Simulated Roleplay", subtitle: "Interactive customer service and negotiation dialogues", grammarId: "dialogue_sim", vocab: ["sotrudnichestvo"], ru: "Мы готовы обсудить условия взаимовыгодного сотрудничества.", en: "We are ready to discuss the terms of mutually beneficial cooperation.", blank: "сотрудничества", distractors: ["соглашения", "проекта", "договора"], skill: "cases" },
+  { unit: 191, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Listening Boss Battle", subtitle: "Pure audio listening without text scaffolding", grammarId: "listening_boss", vocab: ["poezd"], ru: "Поезд дальнего следования отправляется с первого пути.", en: "The long-distance train departs from track one.", blank: "пути", distractors: ["перрона", "вокзала", "станции"], skill: "listening" },
+  { unit: 192, stage: 10, stageName: "B1 Listening & Speaking", level: "B1", title: "Speaking Boss Battle", subtitle: "Active spoken production & pronunciation test", grammarId: "speaking_boss", vocab: ["mysli"], ru: "Я свободно выражаю свои мысли на русском языке.", en: "I express my thoughts fluently in Russian.", blank: "выражаю", distractors: ["говорю", "думаю", "пишу"], skill: "verbs" },
+
+  // STAGE 11: B2 Advanced Russian (193-210)
+  { unit: 193, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Advanced Verb Aspect", subtitle: "Aspectual nuances: intent, politeness and duration", grammarId: "adv_aspect", vocab: ["dokument"], ru: "Вы не могли бы передать документ директору?", en: "Could you pass the document to the director?", blank: "передать", distractors: ["передавать", "передали", "передадите"], skill: "verbs" },
+  { unit: 194, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Motion Prefixes 1", subtitle: "войти (in), выйти (out), прийти (arrive), уйти (leave)", grammarId: "motion_pref_1", vocab: ["pristavka"], ru: "Он вошёл в комнату и включил свет.", en: "He entered the room and turned on the light.", blank: "вошёл", distractors: ["вышел", "пришёл", "ушёл"], skill: "verbs" },
+  { unit: 195, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Motion Prefixes 2", subtitle: "подойти (approach), отойти (step away), перейти (cross)", grammarId: "motion_pref_2", vocab: ["peshekhody"], ru: "Пешеходы перешли через широкую улицу.", en: "The pedestrians crossed the wide street.", blank: "перешли", distractors: ["подошли", "отошли", "дошли"], skill: "verbs" },
+  { unit: 196, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Verb Prefix Semantics", subtitle: "за- (start), пере- (redo/across), до- (finish), про- (through)", grammarId: "prefix_semantics", vocab: ["znachenie"], ru: "Мы наконец дочитали эту сложную книгу.", en: "We finally finished reading this difficult book.", blank: "дочитали", distractors: ["прочитали", "зачитали", "перечитали"], skill: "verbs" },
+  { unit: 197, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Advanced Case Semantics", subtitle: "Temporal, spatial and causal case constructions", grammarId: "adv_cases", vocab: ["prichina"], ru: "Он отсутствовал по уважительной причине.", en: "He was absent for a valid reason.", blank: "причине", distractors: ["причину", "причиной", "причины"], skill: "cases" },
+  { unit: 198, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Case + Aspect Interactions", subtitle: "Governing verbs with complex case complements", grammarId: "case_aspect_combo", vocab: ["razgovor"], ru: "Она избегает лишних разговоров на работе.", en: "She avoids unnecessary conversations at work.", blank: "разговоров", distractors: ["разговоры", "разговорам", "разговорами"], skill: "cases" },
+  { unit: 199, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Advanced Genitive", subtitle: "Genitive partitive (чаю, сахару) and negative comparisons", grammarId: "adv_genitive", vocab: ["chay"], ru: "Выпейте горячего чаю с лимоном.", en: "Drink some hot tea with lemon.", blank: "чаю", distractors: ["чая", "чае", "чаем"], skill: "cases" },
+  { unit: 200, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Advanced Dative", subtitle: "Impersonal modals: мне не спится, ему не сидится", grammarId: "adv_dative", vocab: ["son"], ru: "Мне сегодня ночью совсем не спится.", en: "I can't sleep at all tonight.", blank: "не спится", distractors: ["не сплю", "не спал", "не спать"], skill: "verbs" },
+  { unit: 201, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Advanced Instrumental", subtitle: "Predicate Instrumental: он был назначен директором", grammarId: "adv_instrumental", vocab: ["direktor"], ru: "Он был назначен генеральным директором компании.", en: "He was appointed general director of the company.", blank: "директором", distractors: ["директор", "директора", "директору"], skill: "cases" },
+  { unit: 202, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Advanced Prepositional", subtitle: "Abstract contexts with при, о, в, на", grammarId: "adv_prepositional", vocab: ["vozmozhnost"], ru: "При первой возможности мы посетим Эрмитаж.", en: "At the first opportunity we will visit the Hermitage.", blank: "возможности", distractors: ["возможность", "возможностью", "возможностях"], skill: "cases" },
+  { unit: 203, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Passive Voice", subtitle: "был сделан, была построена, было решено", grammarId: "passive_voice", vocab: ["stantsiya"], ru: "Новая станция метро была построена за два года.", en: "The new metro station was built in two years.", blank: "построена", distractors: ["построена была", "построили", "строили"], skill: "verbs" },
+  { unit: 204, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Participles Mastery", subtitle: "Active & Passive, Present & Past participle paradigms", grammarId: "participles_mastery", vocab: ["konkurs"], ru: "Проект, разработанный нашими инженерами, победил в конкурсе.", en: "The project developed by our engineers won the competition.", blank: "разработанный", distractors: ["разработавший", "разрабатывающий", "разработан"], skill: "verbs" },
+  { unit: 205, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Participial Phrases", subtitle: "Punctuation and agreement in participial clauses", grammarId: "participial_phrases", vocab: ["doklad"], ru: "Человек, стоящий у окна, внимательно слушал доклад.", en: "The person standing by the window listened to the report attentively.", blank: "стоящий", distractors: ["стоял", "стоит", "стоя"], skill: "syntax" },
+  { unit: 206, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Gerund Constructions", subtitle: "деепричастный оборот: Прочитав письмо, он задумался", grammarId: "gerund_mastery", vocab: ["universitet"], ru: "Закончив университет, она уехала работать в Москву.", en: "Having graduated from university, she left to work in Moscow.", blank: "Закончив", distractors: ["Закончила", "Заканчивая", "Законченный"], skill: "verbs" },
+  { unit: 207, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Nominalization", subtitle: "развитие, использование, принятие, формирование", grammarId: "nominalization", vocab: ["tekhnologii"], ru: "Использование новых технологий повысило эффективность.", en: "The use of new technologies increased efficiency.", blank: "Использование", distractors: ["Использовать", "Используя", "Использованный"], skill: "vocabulary" },
+  { unit: 208, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Russian Word Formation", subtitle: "Prefixes, suffixes, and morphological roots", grammarId: "word_formation", vocab: ["terminy"], ru: "Преподаватель объяснил словообразование сложных терминов.", en: "The instructor explained the word-formation of complex terms.", blank: "словообразование", distractors: ["слова", "словарь", "словесность"], skill: "vocabulary" },
+  { unit: 209, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "Russian Roots & Etymology", subtitle: "Cognates and semantic trees (вод-, ход-, уч-, вид-)", grammarId: "russian_roots", vocab: ["koren"], ru: "Корень 'ход' объединяет слова: вход, выход, переход, поход.", en: "The root 'khod' unites words: entrance, exit, crossing, hike.", blank: "переход", distractors: ["перевод", "привод", "увод"], skill: "vocabulary" },
+  { unit: 210, stage: 11, stageName: "B2 Advanced Russian", level: "B2", title: "B2 Grammar Boss Battle", subtitle: "Comprehensive advanced grammar and syntax challenge", grammarId: "b2_grammar_boss", vocab: ["srok"], ru: "Несмотря на возникшие трудности, задача была решена в срок.", en: "Despite the difficulties that arose, the task was solved on time.", blank: "решена", distractors: ["решил", "решая", "решение"], skill: "syntax" },
+
+  // STAGE 12: B2/C1 Real Russian & Boss (211-220)
+  { unit: 211, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Authentic News Media", subtitle: "Analyzing journalistic articles and analytical reports", grammarId: "authentic_news", vocab: ["peregovory"], ru: "В ходе переговоров стороны достигли предварительного соглашения.", en: "During the negotiations the parties reached a preliminary agreement.", blank: "соглашения", distractors: ["договора", "решения", "мнения"], skill: "vocabulary" },
+  { unit: 212, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Opinion Columns & Essays", subtitle: "Rhetorical devices, tone and essayistic structures", grammarId: "opinion_essays", vocab: ["avtor"], ru: "Автор статьи убедительно отстаивает свою точку зрения.", en: "The author of the article convincingly defends his point of view.", blank: "отстаивает", distractors: ["держит", "пишет", "говорит"], skill: "vocabulary" },
+  { unit: 213, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Russian Literature", subtitle: "Literary vocabulary from Chekhov, Pushkin and Tolstoy", grammarId: "literature", vocab: ["literatura"], ru: "Классическая литература отражает глубину человеческой души.", en: "Classical literature reflects the depth of the human soul.", blank: "души", distractors: ["жизни", "мысли", "истории"], skill: "vocabulary" },
+  { unit: 214, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Dialogue Subtext", subtitle: "Implied meaning, cultural hints and pragmatics", grammarId: "subtext", vocab: ["ironiya"], ru: "В его словах чувствовалась скрытая ирония.", en: "In his words one could feel a hidden irony.", blank: "скрытая", distractors: ["явная", "громкая", "простая"], skill: "vocabulary" },
+  { unit: 215, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Humor & Sarcasm", subtitle: "Irony, puns, banter and Russian humor tropes", grammarId: "humor_sarcasm", vocab: ["yumer"], ru: "Это был тонкий намёк на наши прошлые ошибки.", en: "That was a subtle hint at our past mistakes.", blank: "намёк", distractors: ["совет", "урок", "вопрос"], skill: "vocabulary" },
+  { unit: 216, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Russian Idioms", subtitle: "водить за нос, спустя рукава, белая ворона, кот наплакал", grammarId: "idioms", vocab: ["idioma"], ru: "Он работал спустя рукава, поэтому ничего не успел.", en: "He worked carelessly (slipshod), so he finished nothing on time.", blank: "спустя рукава", distractors: ["засучив рукава", "положа руку на сердце", "не покладая рук"], skill: "vocabulary" },
+  { unit: 217, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Russian Proverbs", subtitle: "Без труда не выловишь и рыбку из пруда. Семь раз отмерь...", grammarId: "proverbs", vocab: ["poslovitsa"], ru: "Без труда не выловишь и рыбку из пруда.", en: "Without effort you cannot even catch a fish from a pond (No pain, no gain).", blank: "труда", distractors: ["дела", "работы", "денег"], skill: "vocabulary" },
+  { unit: 218, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Modern Slang & Colloquialisms", subtitle: "хайп, краш, зашквар, ламповый, чилить, фича", grammarId: "modern_slang", vocab: ["sleng"], ru: "Мы провели вечер в ламповой атмосфере за чаем.", en: "We spent the evening in a cozy ('tube-warm') atmosphere over tea.", blank: "ламповой", distractors: ["крутой", "быстрой", "громкой"], skill: "vocabulary" },
+  { unit: 219, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "Cultural Russian", subtitle: "Traditions, banya, dacha culture and cultural idioms", grammarId: "culture", vocab: ["kultura"], ru: "С лёгким паром! — традиционное пожелание после бани.", en: "'May the steam be light on you!' — the traditional greeting after the banya.", blank: "паром", distractors: ["душем", "чаем", "теплом"], skill: "vocabulary" },
+  { unit: 220, stage: 12, stageName: "B2/C1 Real Russian & Boss", level: "C1", title: "🇷🇺 РУССКИЙ БОСС (Grand Boss)", subtitle: "Final curriculum milestone — comprehensive Russian mastery challenge", grammarId: "grand_boss", vocab: ["rossiya"], ru: "Поздравляем! Вы прошли весь курс RussVerse и освоили русский язык на высшем уровне!", en: "Congratulations! You have completed the entire RussVerse course and mastered Russian at the highest level!", blank: "освоили", distractors: ["забыли", "начали", "спросили"], skill: "syntax" },
+];
+
+function buildCompleteCurriculum(): Lesson[] {
+  const result: Lesson[] = [];
+
+  // Stage 1 (Units 1 to 16)
+  STAGE_1_UNITS.forEach((u) => {
+    result.push({
+      id: `unit-${String(u.unit).padStart(3, "0")}`,
+      unit: u.unit,
+      index: u.unit,
+      stage: u.stage,
+      stageName: u.stageName,
+      level: u.level,
+      title: u.title,
+      subtitle: u.subtitle,
+      grammarId: u.grammarId,
+      vocab: u.vocab,
+      sentences: u.sentences,
+      xp: u.xp,
+    });
+  });
+
+  // Stages 2 to 12 (Units 17 to 220)
+  STAGES_2_TO_12_UNITS.forEach((u) => {
+    result.push({
+      id: `unit-${String(u.unit).padStart(3, "0")}`,
+      unit: u.unit,
+      index: u.unit,
+      stage: u.stage,
+      stageName: u.stageName,
+      level: u.level,
+      title: u.title,
+      subtitle: u.subtitle,
+      grammarId: u.grammarId,
+      vocab: u.vocab ?? ["vocabulary"],
+      xp: u.stage >= 11 ? 50 : u.stage >= 8 ? 45 : 35,
+      sentences: [
+        {
+          ru: u.ru,
+          en: u.en,
+          skill: u.skill,
+          blank: { answer: u.blank, distractors: u.distractors, note: `Focus: ${u.title}` },
+        },
+        {
+          ru: `Практический пример: ${u.ru}`,
+          en: `Practical context: ${u.en}`,
+          skill: u.skill,
+        },
+      ],
+    });
+  });
+
+  return result;
+}
+
+export const curriculum220Lessons = buildCompleteCurriculum();
+export const curriculum220ById = Object.fromEntries(curriculum220Lessons.map((l) => [l.id, l]));
+export const curriculum220ByUnit = Object.fromEntries(curriculum220Lessons.map((l) => [l.unit, l]));

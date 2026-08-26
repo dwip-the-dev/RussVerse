@@ -101,6 +101,21 @@ export function orderExercise(seed: SentenceSeed, grammarId: string): Exercise {
   };
 }
 
+export function speechReadingExercise(seed: SentenceSeed, grammarId: string): Exercise {
+  return {
+    id: `speech-${Math.random().toString(36).slice(2, 7)}`,
+    kind: "speech_read",
+    skill: "listening",
+    instruction: "🎤 Read and pronounce this Russian sentence aloud",
+    prompt: seed.ru,
+    sub: `Meaning: ${seed.en}`,
+    answer: seed.ru,
+    audioText: seed.ru,
+    explanation: `Target pronunciation: "${seed.ru}" (${seed.en})`,
+    grammarId,
+  };
+}
+
 export function translateExercise(seed: SentenceSeed, grammarId: string): Exercise {
   return {
     id: `tr-${Math.random().toString(36).slice(2, 7)}`,
@@ -486,7 +501,34 @@ export function normalise(value: string): string {
     .trim();
 }
 
+export function calculateSimilarity(a: string, b: string): number {
+  const s1 = normalise(a);
+  const s2 = normalise(b);
+  if (s1 === s2) return 1.0;
+  if (!s1.length || !s2.length) return 0.0;
+
+  const matrix: number[][] = [];
+  for (let i = 0; i <= s1.length; i++) matrix[i] = [i] as unknown as number[];
+  for (let j = 0; j <= s2.length; j++) matrix[0]![j] = j;
+
+  for (let i = 1; i <= s1.length; i++) {
+    for (let j = 1; j <= s2.length; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      matrix[i]![j] = Math.min(
+        matrix[i - 1]![j]! + 1,
+        matrix[i]![j - 1]! + 1,
+        matrix[i - 1]![j - 1]! + cost,
+      );
+    }
+  }
+  const maxLen = Math.max(s1.length, s2.length);
+  return Math.max(0, 1 - matrix[s1.length]![s2.length]! / maxLen);
+}
+
 export function checkAnswer(exercise: Exercise, given: string): boolean {
+  if (exercise.kind === "speech_read") {
+    return calculateSimilarity(given, exercise.answer) >= 0.70;
+  }
   return normalise(given) === normalise(exercise.answer);
 }
 
@@ -494,6 +536,11 @@ export function checkAnswer(exercise: Exercise, given: string): boolean {
 export function diagnoseMistake(exercise: Exercise, given: string): string {
   const normGiven = normalise(given);
   const normAns = normalise(exercise.answer);
+
+  if (exercise.kind === "speech_read") {
+    const sim = Math.round(calculateSimilarity(given, exercise.answer) * 100);
+    return `Pronunciation match: ${sim}%. Target Russian sentence: "${exercise.answer}".`;
+  }
 
   if (normGiven === normAns) return "Correct!";
 
@@ -533,7 +580,7 @@ export function diagnoseMistake(exercise: Exercise, given: string): string {
   return exercise.explanation ?? `Expected: "${exercise.answer}"`;
 }
 
-/** Build a full lesson: learn words, sentences, listening and word order */
+/** Build a full lesson: learn words, sentences, listening, speech reading and word order */
 export function buildLesson(lesson: Lesson): Exercise[] {
   const words = lesson.vocab.map((id) => vocabById[id]).filter((v): v is VocabEntry => Boolean(v));
   const intro = words.slice(0, 4).map(vocabRecognition);
@@ -548,6 +595,9 @@ export function buildLesson(lesson: Lesson): Exercise[] {
 
     if (i === 0) {
       sentenceExercises.push(listeningExercise(seed, lesson.grammarId));
+    }
+    if (i === 1 || (i === 0 && lesson.sentences.length === 1)) {
+      sentenceExercises.push(speechReadingExercise(seed, lesson.grammarId));
     }
   });
 

@@ -1,10 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpen, CheckCircle, GitFork, Lock, Sparkles, Volume2 } from "lucide-react";
-import { useState } from "react";
+import {
+  BookOpen,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Filter,
+  Flame,
+  GitFork,
+  GraduationCap,
+  Layers,
+  Lock,
+  Search,
+  Sparkles,
+  Trophy,
+  Volume2,
+  Zap,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app/AppShell";
-import { lessons } from "@/data/lessons";
 import { grammar, grammarById } from "@/data/grammar";
+import { lessons, STAGES, type Lesson, type Stage } from "@/data/lessons";
 import { useAppState } from "@/hooks/useAppState";
 import { speakCyrillicLetter, speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
@@ -12,16 +30,16 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/learn")({
   head: () => ({
     meta: [
-      { title: "Curriculum & Alphabet — RussVerse" },
+      { title: "220-Unit Curriculum — RussVerse" },
       {
         name: "description",
         content:
-          "CEFR A1–A2 Russian syllabus: units, lessons, interactive Cyrillic soundboard and the grammar dependency graph.",
+          "220-unit CEFR Russian monster curriculum: from absolute beginner A1 to fluent C1 with interactive scaffolded units, Cyrillic soundboard and grammar dependency graph.",
       },
-      { property: "og:title", content: "Russian Curriculum & Alphabet — RussVerse" },
+      { property: "og:title", content: "220-Unit Russian Curriculum — RussVerse" },
       {
         property: "og:description",
-        content: "Interactive Russian learning units, 33-letter Cyrillic soundboard and grammar dependency graph.",
+        content: "220 scaffolded Russian units spanning 12 progressive stages, 33 Cyrillic letters soundboard, and full grammar tree.",
       },
     ],
   }),
@@ -67,27 +85,96 @@ const ALPHABET = [
 function Learn() {
   const { state } = useAppState();
   const [tab, setTab] = useState<"units" | "alphabet" | "grammar">("units");
-  const [levelFilter, setLevelFilter] = useState<"ALL" | "A1" | "A2">("ALL");
+  const [levelFilter, setLevelFilter] = useState<"ALL" | "A1" | "A2" | "B1" | "B2" | "C1">("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openStages, setOpenStages] = useState<Record<number, boolean>>({
+    1: true, // Stage 1 open by default
+  });
 
   const completed = state.progress.lessonsCompleted;
-  const filteredLessons = lessons.filter((l) => (levelFilter === "ALL" ? true : l.level === levelFilter));
-  const units = [...new Set(filteredLessons.map((l) => l.unit))];
+  const completedSet = useMemo(() => new Set(completed), [completed]);
+
+  const toggleStage = (stageId: number) => {
+    setOpenStages((prev) => ({
+      ...prev,
+      [stageId]: !prev[stageId],
+    }));
+  };
+
+  const expandAll = () => {
+    const all: Record<number, boolean> = {};
+    STAGES.forEach((s) => (all[s.id] = true));
+    setOpenStages(all);
+  };
+
+  const collapseAll = () => {
+    setOpenStages({});
+  };
+
+  // Filter lessons based on level and search
+  const filteredLessons = useMemo(() => {
+    return lessons.filter((l) => {
+      if (levelFilter !== "ALL" && l.level !== levelFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesTitle = l.title.toLowerCase().includes(q);
+        const matchesSubtitle = l.subtitle.toLowerCase().includes(q);
+        const matchesUnitNum = String(l.unit).includes(q) || `unit ${l.unit}`.includes(q) || `#${l.unit}`.includes(q);
+        const matchesStage = l.stageName.toLowerCase().includes(q);
+        return matchesTitle || matchesSubtitle || matchesUnitNum || matchesStage;
+      }
+      return true;
+    });
+  }, [levelFilter, searchQuery]);
+
+  const totalCompletedCount = useMemo(() => {
+    return lessons.filter((l) => completedSet.has(l.id) || completedSet.has(`unit-${String(l.unit).padStart(3, "0")}`)).length;
+  }, [completedSet]);
+
+  const overallProgressPct = Math.round((totalCompletedCount / Math.max(1, lessons.length)) * 100);
 
   return (
     <AppShell>
-      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-        <div>
-          <h1 className="font-display text-3xl font-black tracking-tight">Curriculum & Alphabet</h1>
-          <p className="text-sm text-muted-foreground">
-            Structured CEFR progression with Russian audio soundboard and grammar dependency graph.
-          </p>
+      {/* Header & Main Title */}
+      <div className="min-w-0 break-words">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="border border-ink bg-gold px-2.5 py-0.5 text-xs font-bold text-accent-foreground shadow-[var(--shadow-hard-sm)] font-mono">
+            220 UNITS · 12 PROGRESSIVE STAGES
+          </span>
+          <span className="rounded bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground font-mono">
+            {totalCompletedCount} / {lessons.length} Completed ({overallProgressPct}%)
+          </span>
+        </div>
+
+        <h1 className="mt-1.5 font-display text-3xl font-black tracking-tight sm:text-4xl">
+          Russian Curriculum & Scaffolding
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+          From absolute beginner (A1) to fluent master (C1) across 220 structured units with instant audio and grammar drills.
+        </p>
+
+        {/* Global Curriculum Progress Bar */}
+        <div className="mt-3.5 border-2 border-ink bg-card p-3 shadow-[var(--shadow-hard-sm)]">
+          <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Trophy className="size-3.5 text-gold" />
+              <span>Grand Progression (A1 → C1)</span>
+            </span>
+            <span className="font-mono text-primary">{totalCompletedCount} / 220 Units ({overallProgressPct}%)</span>
+          </div>
+          <div className="h-3 w-full border border-ink bg-muted overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${Math.max(2, overallProgressPct)}%` }}
+            />
+          </div>
         </div>
       </div>
 
       {/* Main View Tabs */}
       <div className="mt-5 flex flex-wrap gap-2 border-b-2 border-ink pb-2">
         {[
-          { id: "units", label: "Lessons & Units", icon: BookOpen },
+          { id: "units", label: `220 Units (${lessons.length})`, icon: BookOpen },
           { id: "alphabet", label: "33 Cyrillic Letters", icon: Volume2 },
           { id: "grammar", label: "Grammar Graph", icon: GitFork },
         ].map((t) => {
@@ -111,81 +198,225 @@ function Learn() {
         })}
       </div>
 
-      {/* TAB 1: Units & Lessons */}
+      {/* TAB 1: 220 Units Scaffolding Accordion */}
       {tab === "units" && (
-        <div className="mt-5 min-w-0 break-words">
-          {/* Level Filter Bar */}
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Level:</span>
-            {(["ALL", "A1", "A2"] as const).map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => setLevelFilter(lvl)}
-                className={cn(
-                  "border border-ink px-2.5 py-0.5 text-xs font-bold shadow-[1px_1px_0_0_var(--ink)] cursor-pointer",
-                  levelFilter === lvl ? "bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
-                )}
-              >
-                {lvl === "ALL" ? "All Levels" : `CEFR ${lvl}`}
-              </button>
-            ))}
+        <div className="mt-5 space-y-5 min-w-0 break-words">
+          {/* Filter, Search & Accordion Controls Bar */}
+          <div className="space-y-3 border-2 border-ink bg-card p-3.5 shadow-[var(--shadow-hard-sm)]">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search across 220 units (e.g. '83', 'Dative', 'Supermarket', 'Aspect')..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full border-2 border-ink bg-background py-2 pl-9 pr-3 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* CEFR Level Filter and Accordion Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-ink/10">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Level:</span>
+                {(["ALL", "A1", "A2", "B1", "B2", "C1"] as const).map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setLevelFilter(lvl)}
+                    className={cn(
+                      "border border-ink px-2 py-0.5 text-xs font-bold shadow-[1px_1px_0_0_var(--ink)] cursor-pointer transition-all",
+                      levelFilter === lvl ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted",
+                    )}
+                  >
+                    {lvl === "ALL" ? "All Levels" : lvl}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1.5 ml-auto">
+                <button
+                  onClick={expandAll}
+                  className="flex items-center gap-1 border border-ink bg-background px-2.5 py-1 text-[11px] font-bold shadow-[1px_1px_0_0_var(--ink)] hover:bg-muted cursor-pointer"
+                  title="Expand all 12 stages"
+                >
+                  <ChevronsUpDown className="size-3" />
+                  <span>Expand All</span>
+                </button>
+                <button
+                  onClick={collapseAll}
+                  className="flex items-center gap-1 border border-ink bg-background px-2.5 py-1 text-[11px] font-bold shadow-[1px_1px_0_0_var(--ink)] hover:bg-muted cursor-pointer"
+                  title="Collapse all stages"
+                >
+                  <ChevronsDownUp className="size-3" />
+                  <span>Collapse All</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Stage Jump Pills (Horizontal scrollable quick-jump) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 scrollbar-none text-[11px]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground shrink-0 mr-1">Jump to:</span>
+              {STAGES.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setOpenStages((prev) => ({ ...prev, [s.id]: true }));
+                    const el = document.getElementById(`stage-${s.id}`);
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="shrink-0 rounded border border-ink/40 bg-muted/60 px-2 py-0.5 font-bold hover:bg-gold/30 hover:border-ink transition-colors cursor-pointer"
+                >
+                  Stage {s.id} ({s.level})
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-6 min-w-0">
-            {units.map((unit) => {
-              const unitLessons = filteredLessons.filter((l) => l.unit === unit);
+          {/* 12 STAGES ACCORDION SCAFFOLDING */}
+          <div className="space-y-4 min-w-0">
+            {STAGES.map((stage) => {
+              const stageLessons = filteredLessons.filter((l) => l.unit >= stage.unitRange[0] && l.unit <= stage.unitRange[1]);
+              if (stageLessons.length === 0 && searchQuery) return null;
+
+              const isOpen = openStages[stage.id] ?? false;
+              const totalInStage = stage.unitRange[1] - stage.unitRange[0] + 1;
+              const completedInStage = lessons
+                .filter((l) => l.unit >= stage.unitRange[0] && l.unit <= stage.unitRange[1])
+                .filter((l) => completedSet.has(l.id) || completedSet.has(`unit-${String(l.unit).padStart(3, "0")}`)).length;
+              const isStageComplete = completedInStage === totalInStage && totalInStage > 0;
+
               return (
-                <section key={unit} className="border-2 border-ink bg-card p-3 sm:p-4 shadow-[var(--shadow-hard)] min-w-0 break-words">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-ink pb-2 mb-3">
-                    <h2 className="font-display text-sm sm:text-base font-extrabold uppercase tracking-wide flex items-center gap-2 min-w-0 break-words">
-                      <span className="bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground shrink-0">
-                        Unit {unit}
-                      </span>
-                      <span className="break-words">{unitLessons[0]?.title}</span>
-                    </h2>
-                    <span className="text-xs font-semibold text-muted-foreground font-mono shrink-0">
-                      {unitLessons.filter((l) => completed.includes(l.id)).length}/{unitLessons.length} done
-                    </span>
+                <div
+                  key={stage.id}
+                  id={`stage-${stage.id}`}
+                  className={cn(
+                    "border-2 border-ink transition-all shadow-[var(--shadow-hard)] min-w-0 break-words",
+                    isStageComplete ? "bg-card" : "bg-card",
+                  )}
+                >
+                  {/* Stage Accordion Header */}
+                  <div
+                    onClick={() => toggleStage(stage.id)}
+                    className="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-muted/40 transition-colors border-b-2 border-ink"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <button
+                        type="button"
+                        aria-label="Toggle stage"
+                        className="grid size-7 shrink-0 place-items-center border-2 border-ink bg-background font-bold text-xs shadow-[1px_1px_0_0_var(--ink)]"
+                      >
+                        {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                      </button>
+
+                      <div className="min-w-0 flex-1 break-words">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="border border-ink bg-primary px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-foreground">
+                            STAGE {stage.id} · CEFR {stage.level}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-muted-foreground">
+                            Units {stage.unitRange[0]}–{stage.unitRange[1]}
+                          </span>
+                          {isStageComplete && (
+                            <span className="flex items-center gap-1 rounded bg-success/20 px-1.5 py-0.2 text-[10px] font-bold text-success">
+                              <CheckCircle className="size-3" /> Mastered
+                            </span>
+                          )}
+                        </div>
+
+                        <h2 className="mt-1 font-display text-base sm:text-lg font-black tracking-tight text-foreground">
+                          {stage.name}
+                        </h2>
+                        <p className="text-xs text-muted-foreground break-words line-clamp-1 sm:line-clamp-none">
+                          {stage.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-right pl-2">
+                      <div className="font-mono text-xs sm:text-sm font-black text-foreground">
+                        {completedInStage}/{totalInStage}
+                      </div>
+                      <div className="text-[10px] font-semibold text-muted-foreground uppercase">Done</div>
+                    </div>
                   </div>
 
-                  <div className="grid gap-2.5 min-w-0">
-                    {unitLessons.map((l) => {
-                      const done = completed.includes(l.id);
-                      return (
-                        <Link
-                          key={l.id}
-                          to="/lesson/$id"
-                          params={{ id: l.id }}
-                          className={cn(
-                            "flex items-center gap-3 border-2 border-ink p-3 transition-all shadow-[var(--shadow-hard-sm)] hover:bg-muted/40 min-w-0 break-words",
-                            done ? "bg-success/10" : "bg-background",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "grid size-8 shrink-0 place-items-center border-2 border-ink text-xs font-bold",
-                              done ? "bg-success text-success-foreground" : "bg-background",
-                            )}
-                          >
-                            {done ? "✓" : l.index}
-                          </span>
-                          <div className="min-w-0 flex-1 break-words">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="font-bold text-sm leading-snug break-words">{l.title}</span>
-                              <span className="rounded bg-muted px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground shrink-0">
-                                {l.level}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground break-words line-clamp-1 sm:line-clamp-none">{l.subtitle}</p>
-                          </div>
-                          <span className="shrink-0 text-xs font-bold text-primary font-mono ml-auto">
-                            +{l.xp} XP
-                          </span>
-                        </Link>
-                      );
-                    })}
+                  {/* Stage Progress Line */}
+                  <div className="h-1.5 w-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-success transition-all duration-300"
+                      style={{ width: `${(completedInStage / Math.max(1, totalInStage)) * 100}%` }}
+                    />
                   </div>
-                </section>
+
+                  {/* Collapsible Units Scaffolding Body */}
+                  {isOpen && (
+                    <div className="p-3 sm:p-4 bg-background/50 min-w-0">
+                      {stageLessons.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2 text-center">
+                          No units matched the current filter in this stage.
+                        </p>
+                      ) : (
+                        <div className="grid gap-2.5 sm:grid-cols-1 md:grid-cols-2">
+                          {stageLessons.map((lesson) => {
+                            const isDone =
+                              completedSet.has(lesson.id) ||
+                              completedSet.has(`unit-${String(lesson.unit).padStart(3, "0")}`);
+                            return (
+                              <Link
+                                key={lesson.id}
+                                to="/lesson/$id"
+                                params={{ id: lesson.id }}
+                                className={cn(
+                                  "group flex items-center justify-between gap-3 border-2 border-ink p-3 transition-all cursor-pointer shadow-[var(--shadow-hard-sm)] hover:border-primary hover:bg-gold/10 active:translate-x-[1px] active:translate-y-[1px] min-w-0 break-words",
+                                  isDone ? "bg-success/5 border-success/60" : "bg-card",
+                                )}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  <span
+                                    className={cn(
+                                      "grid size-8 shrink-0 place-items-center border-2 border-ink font-mono text-xs font-bold shadow-[1px_1px_0_0_var(--ink)]",
+                                      isDone ? "bg-success text-success-foreground" : "bg-background text-foreground",
+                                    )}
+                                  >
+                                    {isDone ? "✓" : `#${lesson.unit}`}
+                                  </span>
+
+                                  <div className="min-w-0 flex-1 break-words">
+                                    <div className="flex items-center gap-1.5">
+                                      <h3 className="font-display font-bold text-sm leading-snug text-foreground group-hover:text-primary transition-colors truncate">
+                                        Unit {lesson.unit}: {lesson.title}
+                                      </h3>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground line-clamp-1 break-words">
+                                      {lesson.subtitle}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="font-mono text-xs font-bold text-primary">
+                                    +{lesson.xp} XP
+                                  </span>
+                                  <span className="grid size-6 place-items-center border border-ink bg-background text-[11px] font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                    →
+                                  </span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -201,7 +432,7 @@ function Learn() {
               <span>Interactive Cyrillic Soundboard (33 Letters)</span>
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Tap any letter card to hear authentic Russian pronunciation and see English phonetic approximations.
+              Tap any letter card to hear authentic Russian letter pronunciation.
             </p>
           </div>
 
@@ -301,4 +532,3 @@ function Learn() {
     </AppShell>
   );
 }
-

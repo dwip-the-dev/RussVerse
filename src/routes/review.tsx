@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { ExercisePlayer } from "@/components/app/ExercisePlayer";
 import { SKILLS, type SkillId } from "@/data/grammar";
-import { dueReviewCards, reviewToExercise } from "@/engine/srs";
+import { dueReviewCards, getOverallMemoryStats, reviewToExercise } from "@/engine/srs";
 import { useAppState } from "@/hooks/useAppState";
 import { speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,8 @@ function Review() {
   const allCards = Object.values(state.progress.review);
   const cards = filterSkill === "ALL" ? allCards : allCards.filter((c) => c.skill === filterSkill);
   const due = dueReviewCards(state.progress.review).filter((c) => (filterSkill === "ALL" ? true : c.skill === filterSkill));
+
+  const memStats = getOverallMemoryStats(state.progress.vocabulary);
 
   const exercises = useMemo(() => due.slice(0, 15).map(reviewToExercise), [phase === "play", due]);
 
@@ -85,27 +87,47 @@ function Review() {
   return (
     <AppShell>
       <div>
-        <h1 className="font-display text-3xl font-black tracking-tight">Review Missed Deck</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="border border-ink bg-gold px-2 py-0.5 text-xs font-bold uppercase text-accent-foreground font-mono">
+            FSRS & SM-2+ ENGINE
+          </span>
+          <span className="border border-ink bg-card px-2 py-0.5 text-xs font-bold text-foreground font-mono">
+            {memStats.averageRetentionPct}% RETENTION HEALTH
+          </span>
+        </div>
+        <h1 className="mt-1 font-display text-3xl font-black tracking-tight">Review Missed Deck</h1>
         <p className="text-sm text-muted-foreground">
           Every question missed in a lesson or drill enters this deck. Answer each card correctly {REVIEW_TARGET} times within a 7-day window to graduate it permanently.
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)]">
+      <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="border-2 border-ink bg-card p-3.5 shadow-[var(--shadow-hard)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Due Right Now</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Due Right Now</span>
             <span className="size-2 rounded-full bg-primary animate-ping" />
           </div>
-          <p className="mt-2 font-display text-3xl font-black">{due.length}</p>
-          <p className="text-xs font-semibold text-muted-foreground">Cards ready for review</p>
+          <p className="mt-1.5 font-display text-2xl font-black">{due.length}</p>
+          <p className="text-[11px] font-semibold text-muted-foreground">Cards ready</p>
         </div>
 
-        <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)]">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total In Deck</span>
-          <p className="mt-2 font-display text-3xl font-black">{allCards.length}</p>
-          <p className="text-xs font-semibold text-muted-foreground">Active learning cards</p>
+        <div className="border-2 border-ink bg-card p-3.5 shadow-[var(--shadow-hard)]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">In Deck</span>
+          <p className="mt-1.5 font-display text-2xl font-black">{allCards.length}</p>
+          <p className="text-[11px] font-semibold text-muted-foreground">Active learning</p>
+        </div>
+
+        <div className="border-2 border-ink bg-card p-3.5 shadow-[var(--shadow-hard)]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Retention Rate</span>
+          <p className="mt-1.5 font-display text-2xl font-black text-success">{memStats.averageRetentionPct}%</p>
+          <p className="text-[11px] font-semibold text-muted-foreground">{memStats.retentionHealth}</p>
+        </div>
+
+        <div className="border-2 border-ink bg-card p-3.5 shadow-[var(--shadow-hard)]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Mature Words</span>
+          <p className="mt-1.5 font-display text-2xl font-black text-primary">{memStats.matureWords}</p>
+          <p className="text-[11px] font-semibold text-muted-foreground">Automated memory</p>
         </div>
       </div>
 
