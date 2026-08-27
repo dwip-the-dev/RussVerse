@@ -91,7 +91,14 @@ export function registerPwaServiceWorker() {
         scope: "/",
       });
 
-      // 1. On App Initial Launch: Evaluate if > 24h since last check
+      // 1. Proactively prime cache with core routes on install
+      if (navigator.onLine) {
+        ["/", "/learn", "/practice", "/review", "/progress"].forEach((route) => {
+          fetch(route).catch(() => {});
+        });
+      }
+
+      // 2. On App Initial Launch: Evaluate if > 24h since last check
       evaluate24HourUpdateCheck(registration);
 
       // 2. On Return to Foreground (visibilitychange): Evaluate if > 24h
