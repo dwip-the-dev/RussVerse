@@ -8,21 +8,39 @@ import { useAppState } from "@/hooks/useAppState";
 import { dueReviewCards, dueWordIds } from "@/engine/srs";
 import { levelProgress } from "@/storage/appState";
 
+import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/seo";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "RussVerse — Russian Learning Redefined" },
+      { title: "RussVerse — Russian Language Mastery Engine | 220 CEFR Units & Speech Gym" },
       {
         name: "description",
         content:
-          "CEFR-aligned Russian language learning system: frequency vocabulary, case engine, spaced repetition and personalized weakness mapping.",
+          "Master Russian from beginner to advanced with 220 scaffolded curriculum units, interactive Cyrillic soundboard with oral speech evaluation, grammar case engine, and SM-2 spaced repetition. Free & 100% offline-ready.",
       },
-      { property: "og:title", content: "RussVerse — Master Russian via Frequency & Grammar" },
+      {
+        name: "keywords",
+        content:
+          "learn Russian, Russian language course, Cyrillic soundboard, Russian alphabet audio, Russian grammar cases, Russian verbs, SM-2 spaced repetition, RussVerse, free Russian learning app",
+      },
+      { property: "og:url", content: `${SITE_URL}/` },
+      { property: "og:title", content: "RussVerse — Russian Language Mastery Engine | 220 CEFR Units" },
       {
         property: "og:description",
-        content: "Learn Russian with spaced repetition, grammar drills and your personal Russian Brain Map.",
+        content:
+          "220 scaffolded units, 6,000+ interactive exercises, Cyrillic oral speech analysis, case engines, and SM-2 spaced repetition.",
       },
+      { property: "og:image", content: DEFAULT_OG_IMAGE },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "RussVerse — 220-Unit Russian Mastery Engine" },
+      {
+        name: "twitter:description",
+        content: "Master Russian with 220 units, speech recognition soundboard, and SM-2 spaced repetition.",
+      },
+      { name: "twitter:image", content: DEFAULT_OG_IMAGE },
     ],
+    links: [{ rel: "canonical", href: `${SITE_URL}/` }],
   }),
   component: Home,
 });

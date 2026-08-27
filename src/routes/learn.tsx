@@ -27,22 +27,55 @@ import { useAppState } from "@/hooks/useAppState";
 import { speakCyrillicLetter, speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
+import { SITE_URL, DEFAULT_OG_IMAGE, getBreadcrumbSchema } from "@/lib/seo";
+
 export const Route = createFileRoute("/learn")({
-  head: () => ({
-    meta: [
-      { title: "220-Unit Curriculum — RussVerse" },
-      {
-        name: "description",
-        content:
-          "220-unit CEFR Russian monster curriculum: from absolute beginner A1 to fluent C1 with interactive scaffolded units, Cyrillic soundboard and grammar dependency graph.",
-      },
-      { property: "og:title", content: "220-Unit Russian Curriculum — RussVerse" },
-      {
-        property: "og:description",
-        content: "220 scaffolded Russian units spanning 12 progressive stages, 33 Cyrillic letters soundboard, and full grammar tree.",
-      },
-    ],
-  }),
+  head: () => {
+    const breadcrumbLd = JSON.stringify(
+      getBreadcrumbSchema([
+        { name: "Home", url: "/" },
+        { name: "Russian Curriculum (220 Units)", url: "/learn" },
+      ]),
+    );
+
+    return {
+      meta: [
+        { title: "Russian Curriculum (220 Units) — CEFR A1 to C1 Grammar & Drills | RussVerse" },
+        {
+          name: "description",
+          content:
+            "Complete 220-unit Russian language curriculum spanning 12 CEFR stages (A1 to C1). Scaffolded lessons, 6,000+ interactive exercises, noun/adjective cases, verb conjugations, and audio pronunciation.",
+        },
+        {
+          name: "keywords",
+          content:
+            "Russian curriculum, 220 Russian lessons, Russian grammar lessons, CEFR Russian course, learn Russian A1 A2 B1 B2, Russian cases roadmap, RussVerse curriculum",
+        },
+        { property: "og:url", content: `${SITE_URL}/learn` },
+        { property: "og:title", content: "Russian Curriculum (220 Units) — CEFR A1 to C1 | RussVerse" },
+        {
+          property: "og:description",
+          content:
+            "Scaffolded 220-unit Russian curriculum with 12 progressive stages, interactive Cyrillic phonetics, and complete grammar trees.",
+        },
+        { property: "og:image", content: DEFAULT_OG_IMAGE },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "220-Unit Russian Curriculum — RussVerse" },
+        {
+          name: "twitter:description",
+          content: "Explore the 220 scaffolded Russian curriculum units from beginner to advanced.",
+        },
+        { name: "twitter:image", content: DEFAULT_OG_IMAGE },
+      ],
+      links: [{ rel: "canonical", href: `${SITE_URL}/learn` }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: breadcrumbLd,
+        },
+      ],
+    };
+  },
   component: Learn,
 });
 
@@ -364,55 +397,11 @@ function Learn() {
                           No units matched the current filter in this stage.
                         </p>
                       ) : (
-                        <div className="grid gap-2.5 sm:grid-cols-1 md:grid-cols-2">
-                          {stageLessons.map((lesson) => {
-                            const isDone =
-                              completedSet.has(lesson.id) ||
-                              completedSet.has(`unit-${String(lesson.unit).padStart(3, "0")}`);
-                            return (
-                              <Link
-                                key={lesson.id}
-                                to="/lesson/$id"
-                                params={{ id: lesson.id }}
-                                className={cn(
-                                  "group flex items-center justify-between gap-3 border-2 border-ink p-3 transition-all cursor-pointer shadow-[var(--shadow-hard-sm)] hover:border-primary hover:bg-gold/10 active:translate-x-[1px] active:translate-y-[1px] min-w-0 break-words",
-                                  isDone ? "bg-success/5 border-success/60" : "bg-card",
-                                )}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                  <span
-                                    className={cn(
-                                      "grid size-8 shrink-0 place-items-center border-2 border-ink font-mono text-xs font-bold shadow-[1px_1px_0_0_var(--ink)]",
-                                      isDone ? "bg-success text-success-foreground" : "bg-background text-foreground",
-                                    )}
-                                  >
-                                    {isDone ? "✓" : `#${lesson.unit}`}
-                                  </span>
-
-                                  <div className="min-w-0 flex-1 break-words">
-                                    <div className="flex items-center gap-1.5">
-                                      <h3 className="font-display font-bold text-sm leading-snug text-foreground group-hover:text-primary transition-colors truncate">
-                                        Unit {lesson.unit}: {lesson.title}
-                                      </h3>
-                                    </div>
-                                    <p className="text-[11px] text-muted-foreground line-clamp-1 break-words">
-                                      {lesson.subtitle}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className="font-mono text-xs font-bold text-primary">
-                                    +{lesson.xp} XP
-                                  </span>
-                                  <span className="grid size-6 place-items-center border border-ink bg-background text-[11px] font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    →
-                                  </span>
-                                </div>
-                              </Link>
-                            );
-                          })}
-                        </div>
+                        <StageUnitsGrid
+                          stageLessons={stageLessons}
+                          completedSet={completedSet}
+                          searchQuery={searchQuery}
+                        />
                       )}
                     </div>
                   )}
@@ -530,5 +519,99 @@ function Learn() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function StageUnitsGrid({
+  stageLessons,
+  completedSet,
+  searchQuery,
+}: {
+  stageLessons: Lesson[];
+  completedSet: Set<string>;
+  searchQuery: string;
+}) {
+  const INITIAL_VISIBLE = 6;
+  const CHUNK_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(searchQuery ? stageLessons.length : INITIAL_VISIBLE);
+
+  // If user searched, show all matching units immediately
+  const effectiveVisible = searchQuery ? stageLessons.length : visibleCount;
+  const displayedLessons = stageLessons.slice(0, effectiveVisible);
+  const hasMore = effectiveVisible < stageLessons.length;
+  const remaining = stageLessons.length - effectiveVisible;
+
+  return (
+    <div className="space-y-3 min-w-0">
+      <div className="grid gap-2.5 sm:grid-cols-1 md:grid-cols-2">
+        {displayedLessons.map((lesson) => {
+          const isDone =
+            completedSet.has(lesson.id) ||
+            completedSet.has(`unit-${String(lesson.unit).padStart(3, "0")}`);
+          return (
+            <Link
+              key={lesson.id}
+              to="/lesson/$id"
+              params={{ id: lesson.id }}
+              className={cn(
+                "group flex items-center justify-between gap-3 border-2 border-ink p-3 transition-all cursor-pointer shadow-[var(--shadow-hard-sm)] hover:border-primary hover:bg-gold/10 active:translate-x-[1px] active:translate-y-[1px] min-w-0 break-words",
+                isDone ? "bg-success/5 border-success/60" : "bg-card",
+              )}
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <span
+                  className={cn(
+                    "grid size-8 shrink-0 place-items-center border-2 border-ink font-mono text-xs font-bold shadow-[1px_1px_0_0_var(--ink)]",
+                    isDone ? "bg-success text-success-foreground" : "bg-background text-foreground",
+                  )}
+                >
+                  {isDone ? "✓" : `#${lesson.unit}`}
+                </span>
+
+                <div className="min-w-0 flex-1 break-words">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-display font-bold text-sm leading-snug text-foreground group-hover:text-primary transition-colors truncate">
+                      Unit {lesson.unit}: {lesson.title}
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-1 break-words">
+                    {lesson.subtitle}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="font-mono text-xs font-bold text-primary">
+                  +{lesson.xp} XP
+                </span>
+                <span className="grid size-6 place-items-center border border-ink bg-background text-[11px] font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  →
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {hasMore && !searchQuery && (
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((prev) => prev + CHUNK_SIZE)}
+            className="border border-ink bg-background px-3 py-1.5 text-xs font-bold shadow-[1px_1px_0_0_var(--ink)] hover:bg-muted hover:border-primary transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Load Next {Math.min(CHUNK_SIZE, remaining)} Units ({remaining} remaining)</span>
+            <ChevronDown className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setVisibleCount(stageLessons.length)}
+            className="border border-ink bg-muted/70 px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground shadow-[1px_1px_0_0_var(--ink)] hover:bg-muted cursor-pointer"
+          >
+            Show All {stageLessons.length}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

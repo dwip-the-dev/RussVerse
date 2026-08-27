@@ -1,0 +1,69 @@
+{
+  "name": "RussVerse — Russian Language Mastery",
+  "short_name": "RussVerse",
+  "description": "Offline-first Russian language learning platform: 220 CEFR units, 33 Cyrillic audio soundboard, case trainer, and SM-2 spaced repetition.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0d1117",
+  "theme_color": "#d9381e",
+  "categories": ["education", "books", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 48x48 32x32 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "220-Unit Curriculum",
+      "short_name": "Learn",
+      "url": "/learn",
+      "description": "Browse 220 scaffolded Russian curriculum units"
+    },
+    {
+      "name": "Practice & Speech Gym",
+      "short_name": "Practice",
+      "url": "/practice",
+      "description": "Shadowing, dictation, sentence builder & Cyrillic drills"
+    },
+    {
+      "name": "Review Missed Flashcards",
+      "short_name": "Review",
+      "url": "/review",
+      "description": "7-day review window flashcard queue"
+    },
+    {
+      "name": "Russian Brain Map",
+      "short_name": "Progress",
+      "url": "/progress",
+      "description": "Granular item mastery and mistake diagnostics"
+    }
+  ]
+}

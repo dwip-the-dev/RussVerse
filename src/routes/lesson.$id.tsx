@@ -12,21 +12,71 @@ import { useAppState } from "@/hooks/useAppState";
 import { playSound, speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
+import { SITE_URL, DEFAULT_OG_IMAGE, getBreadcrumbSchema, getLessonSchema } from "@/lib/seo";
+
 export const Route = createFileRoute("/lesson/$id")({
-  head: () => ({
-    meta: [
-      { title: "Lesson — RussVerse" },
-      {
-        name: "description",
-        content: "Master Russian grammar, vocabulary and conversational patterns through structured interactive exercises.",
-      },
-      { property: "og:title", content: "Lesson — RussVerse" },
-      {
-        property: "og:description",
-        content: "Vocabulary acquisition, case selection, listening comprehension and sentence building.",
-      },
-    ],
-  }),
+  head: ({ params }) => {
+    const id = params.id;
+    const lesson =
+      lessonById[id] ??
+      (id.startsWith("unit-") ? lessons.find((l) => l.unit === parseInt(id.replace("unit-", ""), 10)) : null);
+
+    const title = lesson
+      ? `Unit ${lesson.unit}: ${lesson.title} (${lesson.level}) — Russian Lesson | RussVerse`
+      : "Russian Lesson — RussVerse";
+
+    const description = lesson
+      ? `${lesson.subtitle} — Stage: ${lesson.stageName}, Level: ${lesson.level}. Master Russian grammar cases, high-frequency vocabulary, and interactive drills.`
+      : "Master Russian grammar, vocabulary and conversational patterns through structured interactive exercises.";
+
+    const canonicalUrl = `${SITE_URL}/lesson/${id}`;
+
+    const breadcrumbLd = JSON.stringify(
+      getBreadcrumbSchema([
+        { name: "Home", url: "/" },
+        { name: "Curriculum", url: "/learn" },
+        { name: lesson ? `Unit ${lesson.unit}: ${lesson.title}` : `Lesson ${id}`, url: `/lesson/${id}` },
+      ]),
+    );
+
+    const lessonLd = lesson ? JSON.stringify(getLessonSchema(lesson)) : null;
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        {
+          name: "keywords",
+          content: lesson
+            ? `Russian lesson unit ${lesson.unit}, ${lesson.title}, Russian ${lesson.level}, Russian ${lesson.grammarId}, Russian grammar cases, learn Russian online, RussVerse`
+            : "Russian lesson, Russian grammar exercises, RussVerse",
+        },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: DEFAULT_OG_IMAGE },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: DEFAULT_OG_IMAGE },
+      ],
+      links: [{ rel: "canonical", href: canonicalUrl }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: breadcrumbLd,
+        },
+        ...(lessonLd
+          ? [
+              {
+                type: "application/ld+json",
+                children: lessonLd,
+              },
+            ]
+          : []),
+      ],
+    };
+  },
   component: LessonPage,
 });
 

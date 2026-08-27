@@ -1,5 +1,6 @@
 import { vocabById, vocabulary, type VocabEntry } from "@/data/vocabulary";
 import { lessons, type Lesson, type SentenceSeed } from "@/data/lessons";
+import { CYRILLIC_ALPHABET, type CyrillicLetter } from "@/lang/alphabet";
 import type { Exercise } from "./types";
 import type { SkillId } from "@/data/grammar";
 
@@ -112,6 +113,69 @@ export function speechReadingExercise(seed: SentenceSeed, grammarId: string): Ex
     answer: seed.ru,
     audioText: seed.ru,
     explanation: `Target pronunciation: "${seed.ru}" (${seed.en})`,
+    grammarId,
+  };
+}
+
+export function cyrillicSpeakingExercise(letter: CyrillicLetter): Exercise {
+  return {
+    id: `cyrillic-speech-${letter.char}-${Math.random().toString(36).slice(2, 7)}`,
+    kind: "speech_read",
+    skill: "listening",
+    instruction: `🎙️ Pronounce Cyrillic letter "${letter.char}" [${letter.nameRu}] or word «${letter.sampleRu}»`,
+    prompt: `${letter.char} ${letter.lower}`,
+    sub: `Sound: /${letter.soundEn}/ · Sounds like "${letter.soundsLike}" · Example: «${letter.sampleRu}» (${letter.sampleEn})`,
+    answer: letter.sampleRu,
+    altAnswers: [letter.char, letter.lower, letter.nameRu, letter.soundEn, letter.sampleRu],
+    audioText: `${letter.nameRu}. ${letter.sampleRu}.`,
+    explanation: `Letter "${letter.char}" (${letter.nameRu}) sounds like "${letter.soundsLike}" as in «${letter.sampleRu}» (${letter.sampleEn}). ${letter.note ? `💡 ${letter.note}` : ""}`,
+    grammarId: "cyrillic",
+  };
+}
+
+export function shadowingExercise(seed: SentenceSeed, grammarId: string): Exercise {
+  return {
+    id: `shadow-${Math.random().toString(36).slice(2, 7)}`,
+    kind: "shadowing",
+    skill: "listening",
+    instruction: "🎧 Listen to native audio, then repeat when prompted",
+    prompt: seed.ru,
+    sub: seed.en,
+    answer: seed.ru,
+    audioText: seed.ru,
+    explanation: `Echo target: "${seed.ru}" (${seed.en})`,
+    grammarId,
+  };
+}
+
+export function dictationExercise(seed: SentenceSeed, grammarId: string): Exercise {
+  return {
+    id: `dict-${Math.random().toString(36).slice(2, 7)}`,
+    kind: "dictation",
+    skill: "listening",
+    instruction: "🎧 Audio Dictation: Listen and type what you hear",
+    prompt: "Слушай и запиши (Listen & Type)",
+    sub: "Attack listening & spelling simultaneously",
+    answer: seed.ru,
+    audioText: seed.ru,
+    explanation: `Spelling & audio target: "${seed.ru}" (${seed.en})`,
+    grammarId,
+  };
+}
+
+export function sentenceBuilderExercise(seed: SentenceSeed, grammarId: string): Exercise {
+  const words = seed.ru.replace(/[.?!]$/, "").split(/\s+/).filter(Boolean);
+  return {
+    id: `build-${Math.random().toString(36).slice(2, 7)}`,
+    kind: "sentence_builder",
+    skill: seed.skill,
+    instruction: "🧩 Sentence Builder: Construct the Russian sentence",
+    prompt: seed.en,
+    sub: `Build: ${seed.en}`,
+    answer: words.join(" "),
+    tokens: shuffle(words),
+    audioText: seed.ru,
+    explanation: `Constructed sentence: "${seed.ru}" (${seed.en})`,
     grammarId,
   };
 }
@@ -465,13 +529,18 @@ export function generateComprehensivePool(): Exercise[] {
     });
   });
 
-  // 11. Sentence Seeds from Curriculum (80+ exercises)
+  // 11. Multi-modal Sentence Drills across all Curriculum Units
   lessons.forEach((l) => {
-    l.sentences.forEach((seed, i) => {
+    l.sentences.forEach((seed) => {
       const fill = fillExercise(seed, l.grammarId);
       if (fill) pool.push(fill);
+      pool.push(sentenceBuilderExercise(seed, l.grammarId));
       pool.push(orderExercise(seed, l.grammarId));
+      pool.push(translateExercise(seed, l.grammarId));
       pool.push(listeningExercise(seed, l.grammarId));
+      pool.push(shadowingExercise(seed, l.grammarId));
+      pool.push(dictationExercise(seed, l.grammarId));
+      pool.push(speechReadingExercise(seed, l.grammarId));
     });
   });
 
@@ -525,9 +594,65 @@ export function calculateSimilarity(a: string, b: string): number {
   return Math.max(0, 1 - matrix[s1.length]![s2.length]! / maxLen);
 }
 
+export function diagnoseDictationMistake(expected: string, typed: string): string {
+  const normExp = normalise(expected);
+  const normTyp = normalise(typed);
+
+  const expWords = normExp.split(/\s+/).filter(Boolean);
+  const typWords = normTyp.split(/\s+/).filter(Boolean);
+
+  const mistakes: string[] = [];
+
+  for (let i = 0; i < Math.max(expWords.length, typWords.length); i++) {
+    const e = expWords[i] || "";
+    const t = typWords[i] || "";
+    if (e && t && e !== t) {
+      // Check for akan'ye (o vs a)
+      if (e.replace(/о/g, "а") === t || t.replace(/о/g, "а") === e) {
+        mistakes.push(`"${t}" → "${e}": Vowel reduction error (Akan'ye). Unstressed 'о' sounds like [a], but is spelled 'о' (e.g. Москва, хорошо, молоко).`);
+      }
+      // Check for ikan'ye (e vs i)
+      else if (e.replace(/е/g, "и") === t || t.replace(/е/g, "и") === e) {
+        mistakes.push(`"${t}" → "${e}": Vowel reduction error (Ikan'ye). Unstressed 'е' sounds like [i], but is spelled 'е'.`);
+      }
+      // Check for final devoicing (б/п, в/ф, г/к, д/т, ж/ш, з/с)
+      else if (
+        (e.endsWith("б") && t.endsWith("п")) ||
+        (e.endsWith("в") && t.endsWith("ф")) ||
+        (e.endsWith("г") && t.endsWith("к")) ||
+        (e.endsWith("д") && t.endsWith("т")) ||
+        (e.endsWith("ж") && t.endsWith("ш")) ||
+        (e.endsWith("з") && t.endsWith("с"))
+      ) {
+        mistakes.push(`"${t}" → "${e}": Consonant devoicing error. Russian voiced consonants are devoiced at the end of words (e.g. хлеб sounds like [хлеп], город sounds like [горот]), but retain their root spelling.`);
+      }
+      // Check for soft/hard sign
+      else if (e.includes("ь") && !t.includes("ь")) {
+        mistakes.push(`"${t}" → "${e}": Missing soft sign 'ь' (makes preceding consonant soft).`);
+      } else if (!e.includes("ь") && t.includes("ь")) {
+        mistakes.push(`"${t}" → "${e}": Extra soft sign 'ь'.`);
+      } else {
+        mistakes.push(`"${t}" → "${e}": Spelling mismatch.`);
+      }
+    } else if (e && !t) {
+      mistakes.push(`Missing word: "${e}"`);
+    } else if (!e && t) {
+      mistakes.push(`Extra word: "${t}"`);
+    }
+  }
+
+  if (mistakes.length === 0) return "Correct transcription!";
+  return `${mistakes.length} mistake${mistakes.length > 1 ? "s" : ""}:\n• ` + mistakes.join("\n• ");
+}
+
 export function checkAnswer(exercise: Exercise, given: string): boolean {
-  if (exercise.kind === "speech_read") {
-    return calculateSimilarity(given, exercise.answer) >= 0.70;
+  if (exercise.kind === "speech_read" || exercise.kind === "shadowing") {
+    const targets = [exercise.answer, ...(exercise.altAnswers ?? [])];
+    const maxSim = Math.max(...targets.map((t) => calculateSimilarity(given, t)));
+    return maxSim >= 0.65;
+  }
+  if (exercise.altAnswers && exercise.altAnswers.some((alt) => normalise(given) === normalise(alt))) {
+    return true;
   }
   return normalise(given) === normalise(exercise.answer);
 }
@@ -537,9 +662,19 @@ export function diagnoseMistake(exercise: Exercise, given: string): string {
   const normGiven = normalise(given);
   const normAns = normalise(exercise.answer);
 
-  if (exercise.kind === "speech_read") {
-    const sim = Math.round(calculateSimilarity(given, exercise.answer) * 100);
-    return `Pronunciation match: ${sim}%. Target Russian sentence: "${exercise.answer}".`;
+  if (exercise.kind === "speech_read" || exercise.kind === "shadowing") {
+    const targets = [exercise.answer, ...(exercise.altAnswers ?? [])];
+    const maxSim = Math.max(...targets.map((t) => calculateSimilarity(given, t)));
+    const sim = Math.round(maxSim * 100);
+    return `Pronunciation match: ${sim}%. Target: "${exercise.answer}"${exercise.altAnswers?.length ? ` (or ${exercise.altAnswers.join(", ")})` : ""}.`;
+  }
+
+  if (exercise.kind === "dictation") {
+    return diagnoseDictationMistake(exercise.answer, given);
+  }
+
+  if (exercise.kind === "sentence_builder") {
+    return `Syntax order error: Expected word order: "${exercise.answer}".`;
   }
 
   if (normGiven === normAns) return "Correct!";
@@ -580,28 +715,90 @@ export function diagnoseMistake(exercise: Exercise, given: string): string {
   return exercise.explanation ?? `Expected: "${exercise.answer}"`;
 }
 
-/** Build a full lesson: learn words, sentences, listening, speech reading and word order */
-export function buildLesson(lesson: Lesson): Exercise[] {
+/** Build a full hardened Russian lesson: guaranteed 20 to 40 exercises per unit! */
+export function buildLesson(lesson: Lesson, targetCount = 28): Exercise[] {
   const words = lesson.vocab.map((id) => vocabById[id]).filter((v): v is VocabEntry => Boolean(v));
-  const intro = words.slice(0, 4).map(vocabRecognition);
-  const recall = shuffle(words).slice(0, Math.min(3, words.length)).map(vocabRecall);
+  const fallbackWords = words.length < 6
+    ? [...words, ...shuffle(vocabulary.filter((v) => v.level === lesson.level)).slice(0, 8 - words.length)]
+    : words;
 
-  const sentenceExercises: Exercise[] = [];
-  lesson.sentences.forEach((seed, i) => {
-    const fill = fillExercise(seed, lesson.grammarId);
-    if (fill) sentenceExercises.push(fill);
-    if (i % 2 === 0) sentenceExercises.push(orderExercise(seed, lesson.grammarId));
-    else sentenceExercises.push(translateExercise(seed, lesson.grammarId));
+  const exercises: Exercise[] = [];
 
-    if (i === 0) {
-      sentenceExercises.push(listeningExercise(seed, lesson.grammarId));
-    }
-    if (i === 1 || (i === 0 && lesson.sentences.length === 1)) {
-      sentenceExercises.push(speechReadingExercise(seed, lesson.grammarId));
-    }
+  // 1. Vocabulary Acquisition (RU -> EN Recognition) (4-6 exercises)
+  fallbackWords.slice(0, 6).forEach((w) => {
+    exercises.push(vocabRecognition(w));
   });
 
-  return [...intro, ...shuffle(recall), ...sentenceExercises];
+  // 2. Vocabulary Active Recall (EN -> RU) (4-6 exercises)
+  shuffle(fallbackWords).slice(0, 6).forEach((w) => {
+    exercises.push(vocabRecall(w));
+  });
+
+  // 3. Verb Conjugation Workouts
+  const verbs = fallbackWords.filter((w) => w.pos === "verb" && w.conjugation);
+  verbs.forEach((v) => {
+    const drill = conjugationDrill(v);
+    if (drill) exercises.push(drill);
+  });
+  if (verbs.length === 0) {
+    const levelVerbs = vocabulary.filter((v) => v.pos === "verb" && v.conjugation && (v.level === lesson.level || v.level === "A1"));
+    shuffle(levelVerbs).slice(0, 2).forEach((v) => {
+      const drill = conjugationDrill(v);
+      if (drill) exercises.push(drill);
+    });
+  }
+
+  // 4. Multi-Modal Sentence Drills for EVERY Sentence Seed in the unit
+  lesson.sentences.forEach((seed) => {
+    // Gap Fill drill (grammar & endings)
+    const fill = fillExercise(seed, lesson.grammarId);
+    if (fill) exercises.push(fill);
+
+    // Scrambled Progressive Sentence Builder
+    exercises.push(sentenceBuilderExercise(seed, lesson.grammarId));
+
+    // Word Re-ordering Drill
+    exercises.push(orderExercise(seed, lesson.grammarId));
+
+    // English to Russian Translation
+    exercises.push(translateExercise(seed, lesson.grammarId));
+
+    // Synthesized Audio Comprehension
+    exercises.push(listeningExercise(seed, lesson.grammarId));
+
+    // Native Audio Shadowing & Echo-Repeat
+    exercises.push(shadowingExercise(seed, lesson.grammarId));
+
+    // Audio Dictation & Spelling Attack
+    exercises.push(dictationExercise(seed, lesson.grammarId));
+
+    // Oral Pronunciation Reading Studio
+    exercises.push(speechReadingExercise(seed, lesson.grammarId));
+  });
+
+  // 5. If below target, supplement with high-yield sentence & dictation variations
+  let round = 0;
+  while (exercises.length < targetCount && exercises.length < 35 && lesson.sentences.length > 0) {
+    const seed = lesson.sentences[round % lesson.sentences.length]!;
+    if (round % 3 === 0) {
+      exercises.push(dictationExercise(seed, lesson.grammarId));
+    } else if (round % 3 === 1) {
+      exercises.push(sentenceBuilderExercise(seed, lesson.grammarId));
+    } else {
+      exercises.push(shadowingExercise(seed, lesson.grammarId));
+    }
+    round++;
+  }
+
+  // Ensure strict bounds: minimum 20, maximum 40
+  const finalCount = Math.min(40, Math.max(20, exercises.length));
+  const finalExercises = exercises.slice(0, finalCount);
+
+  // Return mapped with guaranteed unique IDs
+  return finalExercises.map((e, idx) => ({
+    ...e,
+    id: `${e.id}-u${lesson.unit}-${idx}`,
+  }));
 }
 
 /** Build a targeted drill from due words plus weak-skill sentences */

@@ -10,7 +10,10 @@ export type ExerciseKind =
   | "case_choice"
   | "gender_choice"
   | "conjugation"
-  | "speech_read";
+  | "speech_read"
+  | "shadowing"
+  | "dictation"
+  | "sentence_builder";
 
 export interface Exercise {
   id: string;
@@ -30,5 +33,6 @@ export interface Exercise {
   explanation?: string;
   wordId?: string;
   grammarId?: string;
+  altAnswers?: string[];
 }
 

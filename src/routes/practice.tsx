@@ -4,6 +4,7 @@ import {
   Brain,
   CheckCircle2,
   Dumbbell,
+  FileEdit,
   Flame,
   Headphones,
   Layers,
@@ -20,33 +21,71 @@ import { SKILLS, type SkillId } from "@/data/grammar";
 import { curriculum220Lessons } from "@/data/curriculum220";
 import {
   buildPractice,
+  cyrillicSpeakingExercise,
+  dictationExercise,
   getAllCurriculumExercises,
   getExercisePoolCount,
+  sentenceBuilderExercise,
+  shadowingExercise,
   speechReadingExercise,
   shuffle,
 } from "@/engine/exerciseEngine";
+import { buildAdaptiveItemDrill, getItemMasterySummary } from "@/engine/itemMastery";
 import { dueWordIds } from "@/engine/srs";
 import type { Exercise } from "@/engine/types";
 import { useAppState } from "@/hooks/useAppState";
 import { speakCyrillicLetter, speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
+import { SITE_URL, DEFAULT_OG_IMAGE, getBreadcrumbSchema } from "@/lib/seo";
+
 export const Route = createFileRoute("/practice")({
-  head: () => ({
-    meta: [
-      { title: "Practice, Pronunciation & Cyrillics — RussVerse" },
-      {
-        name: "description",
-        content:
-          "Master Russian with 2,000+ dynamic grammar exercises, oral reading studio with speech recognition, and the 33 Cyrillic audio soundboard.",
-      },
-      { property: "og:title", content: "Practice, Pronunciation & Cyrillics — RussVerse" },
-      {
-        property: "og:description",
-        content: "2,000+ adaptive Russian exercises, oral speaking studio, case gym, and interactive Cyrillic phonetics soundboard.",
-      },
-    ],
-  }),
+  head: () => {
+    const breadcrumbLd = JSON.stringify(
+      getBreadcrumbSchema([
+        { name: "Home", url: "/" },
+        { name: "Russian Practice & Speech Gym", url: "/practice" },
+      ]),
+    );
+
+    return {
+      meta: [
+        { title: "Russian Practice & Cyrillic Soundboard — Speech Recognition & Case Drills | RussVerse" },
+        {
+          name: "description",
+          content:
+            "Train Russian active recall: 6,000+ exercises across all 6 cases, 33-letter Cyrillic audio soundboard with speech recognition pronunciation evaluations, sentence builder, and audio dictations.",
+        },
+        {
+          name: "keywords",
+          content:
+            "Russian practice, Russian speech recognition, Cyrillic soundboard, Russian pronunciation trainer, Russian cases exercises, sentence builder Russian, Russian audio dictation",
+        },
+        { property: "og:url", content: `${SITE_URL}/practice` },
+        { property: "og:title", content: "Russian Practice & Cyrillic Soundboard — Speech Recognition & Case Drills | RussVerse" },
+        {
+          property: "og:description",
+          content:
+            "6,000+ interactive Russian drills, live speech recognition pronunciation evaluation, and the complete 33 Cyrillic audio soundboard.",
+        },
+        { property: "og:image", content: DEFAULT_OG_IMAGE },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "Russian Practice & Cyrillic Speech Gym — RussVerse" },
+        {
+          name: "twitter:description",
+          content: "Master Russian speaking, Cyrillic pronunciation, and grammar case declensions.",
+        },
+        { name: "twitter:image", content: DEFAULT_OG_IMAGE },
+      ],
+      links: [{ rel: "canonical", href: `${SITE_URL}/practice` }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: breadcrumbLd,
+        },
+      ],
+    };
+  },
   component: Practice,
 });
 
@@ -104,13 +143,27 @@ const CYRILLIC_ALPHABET: CyrillicLetter[] = [
 ];
 
 type PracticeTab = "workouts" | "speech" | "cyrillics";
-type ModeType = "auto" | "cases" | "verbs" | "gender" | "vocab" | "listening" | "cyrillic_quiz" | "speech";
+type ModeType =
+  | "auto"
+  | "item_drill"
+  | "cases"
+  | "verbs"
+  | "gender"
+  | "vocab"
+  | "listening"
+  | "cyrillic_quiz"
+  | "cyrillic_speech"
+  | "speech"
+  | "shadowing"
+  | "dictation"
+  | "sentence_builder";
 
 function Practice() {
   const { state } = useAppState();
   const [tab, setTab] = useState<PracticeTab>("workouts");
   const [speechLevel, setSpeechLevel] = useState<"ALL" | "A1" | "A2" | "B1" | "B2" | "C1">("ALL");
   const [letterFilter, setLetterFilter] = useState<"ALL" | "vowel" | "consonant" | "sign">("ALL");
+  const [selectedLetter, setSelectedLetter] = useState<CyrillicLetter | null>(null);
   const [phase, setPhase] = useState<"intro" | "play" | "done">("intro");
   const [mode, setMode] = useState<ModeType>("auto");
   const [count, setCount] = useState<number>(10);
@@ -139,12 +192,41 @@ function Practice() {
 
   const exercises = useMemo<Exercise[]>(() => {
     const allPool = getAllCurriculumExercises();
+    const filteredLessons = speechLevel === "ALL"
+      ? curriculum220Lessons
+      : curriculum220Lessons.filter((l) => l.level === speechLevel);
+
+    if (mode === "shadowing") {
+      const shadowList: Exercise[] = [];
+      filteredLessons.forEach((l) => {
+        l.sentences.forEach((s) => {
+          shadowList.push(shadowingExercise(s, l.grammarId));
+        });
+      });
+      return shuffle(shadowList).slice(0, count);
+    }
+
+    if (mode === "dictation") {
+      const dictList: Exercise[] = [];
+      filteredLessons.forEach((l) => {
+        l.sentences.forEach((s) => {
+          dictList.push(dictationExercise(s, l.grammarId));
+        });
+      });
+      return shuffle(dictList).slice(0, count);
+    }
+
+    if (mode === "sentence_builder") {
+      const builderList: Exercise[] = [];
+      filteredLessons.forEach((l) => {
+        l.sentences.forEach((s) => {
+          builderList.push(sentenceBuilderExercise(s, l.grammarId));
+        });
+      });
+      return shuffle(builderList).slice(0, count);
+    }
 
     if (mode === "speech") {
-      const filteredLessons = speechLevel === "ALL"
-        ? curriculum220Lessons
-        : curriculum220Lessons.filter((l) => l.level === speechLevel);
-
       const speechList: Exercise[] = [];
       filteredLessons.forEach((l) => {
         l.sentences.forEach((s) => {
@@ -184,9 +266,22 @@ function Practice() {
       return shuffle(cyrillicPool).slice(0, count);
     }
 
+    if (mode === "cyrillic_speech") {
+      if (selectedLetter) {
+        return [cyrillicSpeakingExercise(selectedLetter)];
+      }
+      const pool = filteredLetters.length > 0 ? filteredLetters : CYRILLIC_ALPHABET;
+      const cyrillicSpeechList = pool.map(cyrillicSpeakingExercise);
+      return shuffle(cyrillicSpeechList).slice(0, count);
+    }
+
+    if (mode === "item_drill") {
+      return buildAdaptiveItemDrill(state.progress.items ?? {}, count);
+    }
+
     // Default: Auto Adaptive
     return buildPractice(due, weakSkills, [], count);
-  }, [phase === "play", mode, count, due, weakSkills, speechLevel]);
+  }, [phase === "play", mode, count, due, weakSkills, speechLevel, selectedLetter, letterFilter, state.progress.items]);
 
   const filteredLetters = CYRILLIC_ALPHABET.filter((l) => (letterFilter === "ALL" ? true : l.type === letterFilter));
 
@@ -197,8 +292,18 @@ function Practice() {
           exercises={exercises}
           mode="practice"
           title={
-            mode === "speech"
+            mode === "item_drill"
+              ? "🎯 Adaptive Item Mastery & Leech Drill"
+              : mode === "shadowing"
+              ? "Audio Shadowing & Echo-Repeat"
+              : mode === "dictation"
+              ? "Audio Dictation & Spelling Attack"
+              : mode === "sentence_builder"
+              ? "Progressive Sentence Builder"
+              : mode === "speech"
               ? "Speech & Pronunciation Studio"
+              : mode === "cyrillic_speech"
+              ? `🎙️ Cyrillic Speaking Studio ${selectedLetter ? `(${selectedLetter.char})` : ""}`
               : mode === "cases"
               ? "Case Master Gym"
               : mode === "verbs"
@@ -279,14 +384,14 @@ function Practice() {
             {totalExercisesInPool.toLocaleString()}+ EXERCISES POOL
           </span>
           <span className="border border-ink bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground font-mono">
-            🎙️ ORAL SPEECH STUDIO
+            🎙️ SHADOWING & DICTATION
           </span>
         </div>
         <h1 className="mt-1 font-display text-3xl font-black tracking-tight sm:text-4xl">
           Practice & Pronunciation Gym
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Targeted Russian drills generated from 6 cases, conjugations, oral speech recognition reading, and the complete 33 Cyrillic soundboard.
+          Master Russian with interactive Audio Shadowing, Audio Dictation spelling attacks, Sentence Builders, 6 cases, and the 33 Cyrillic audio soundboard.
         </p>
       </div>
 
@@ -308,7 +413,7 @@ function Practice() {
         <button
           onClick={() => {
             setTab("speech");
-            setMode("speech");
+            setMode("shadowing");
           }}
           className={cn(
             "flex items-center gap-1.5 border-2 border-ink px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
@@ -318,7 +423,7 @@ function Practice() {
           )}
         >
           <Mic className="size-3.5 text-primary" />
-          <span>Oral Speaking & Speech Studio</span>
+          <span>Shadowing & Pronunciation Studio</span>
         </button>
 
         <button
@@ -352,10 +457,34 @@ function Practice() {
                   badge: weakSkills.length > 0 ? "Targeted" : "Balanced",
                 },
                 {
+                  id: "item_drill" as ModeType,
+                  title: "⚡ Item Mastery & Leech Attack",
+                  desc: "Surgically drills your personal leeches, problematic vocabulary, and grammar rules with past mistake history.",
+                  badge: `${Object.values(state.progress.items ?? {}).filter((i) => i.status === "leech" || i.totalMistakes >= 2).length} Leeches`,
+                },
+                {
+                  id: "shadowing" as ModeType,
+                  title: "🎧 Audio Shadowing (Echo-Repeat)",
+                  desc: "Native audio plays -> 🎙️ Your Turn repeat. Speeds (0.75x–1.5x) and toggleable English for pure reflex building.",
+                  badge: "0.75×-1.5×",
+                },
+                {
+                  id: "dictation" as ModeType,
+                  title: "✍️ Audio Dictation & Spelling Attack",
+                  desc: "Listen to native audio and type what you hear. Detailed diagnostic explains Akan'ye, Ikan'ye and devoicing errors.",
+                  badge: "Spelling Attack",
+                },
+                {
+                  id: "sentence_builder" as ModeType,
+                  title: "🧩 Progressive Sentence Builder",
+                  desc: "Construct natural Russian sentences from scrambled word blocks with dynamic syntax ordering.",
+                  badge: "Syntax",
+                },
+                {
                   id: "speech" as ModeType,
                   title: "🎙️ Spoken Reading Studio",
                   desc: "Read Russian sentences aloud into your microphone with real-time speech recognition and phonetic scoring.",
-                  badge: "Web Speech API",
+                  badge: "Speech AI",
                 },
                 {
                   id: "cases" as ModeType,
@@ -462,23 +591,50 @@ function Practice() {
         </div>
       )}
 
-      {/* TAB 2: Oral Speaking & Speech Studio */}
+      {/* TAB 2: Oral Speaking & Shadowing Studio */}
       {tab === "speech" && (
         <div className="mt-5 space-y-6 min-w-0 break-words">
           <div className="border-2 border-ink bg-card p-5 shadow-[var(--shadow-hard)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="border border-ink bg-gold px-2 py-0.5 text-xs font-bold uppercase text-accent-foreground font-mono">
-                  Active Pronunciation Gym
+                  Audio Shadowing & Speaking Gym
                 </span>
                 <h2 className="mt-2 font-display text-2xl font-black flex items-center gap-2">
                   <Mic className="size-6 text-primary" />
-                  <span>Russian Oral Reading & Pronunciation Studio</span>
+                  <span>Russian Audio Shadowing & Oral Studio</span>
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Train your spoken Russian fluency by reading authentic sentences aloud. The Speech Coach listens in real time, evaluates word-by-word phonetic accuracy, and gives instant pronunciation feedback.
+                  Native audio plays: <em>"В субботу мы отдыхаем."</em> Then immediately: <strong>🎙️ Your turn</strong>. You repeat it while the system evaluates your phonetic accuracy with speed controls (0.75x–1.5x) and optional English removal.
                 </p>
               </div>
+            </div>
+
+            {/* Mode selection within Speech Tab */}
+            <div className="mt-5 grid sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setMode("shadowing")}
+                className={cn(
+                  "border-2 border-ink p-3.5 text-left transition-all cursor-pointer",
+                  mode === "shadowing" ? "bg-ink text-background" : "bg-background text-foreground hover:bg-muted",
+                )}
+              >
+                <p className="font-display font-bold text-sm">🎧 1. Native Audio Shadowing</p>
+                <p className="text-xs opacity-80 mt-1">Audio plays first → you repeat immediately with speech evaluation.</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode("speech")}
+                className={cn(
+                  "border-2 border-ink p-3.5 text-left transition-all cursor-pointer",
+                  mode === "speech" ? "bg-ink text-background" : "bg-background text-foreground hover:bg-muted",
+                )}
+              >
+                <p className="font-display font-bold text-sm">🎙️ 2. Direct Oral Reading</p>
+                <p className="text-xs opacity-80 mt-1">Read and articulate Russian sentences aloud at your own pace.</p>
+              </button>
             </div>
 
             {/* Level Selector for Speech */}
@@ -515,7 +671,7 @@ function Practice() {
             <div className="mt-5 flex items-center justify-between border-t border-ink/20 pt-4">
               <div>
                 <p className="text-sm font-bold font-display">Spoken Drills in Session</p>
-                <p className="text-xs text-muted-foreground">Sentences to read and pronounce</p>
+                <p className="text-xs text-muted-foreground">Sentences to shadow and repeat</p>
               </div>
               <div className="flex gap-1.5">
                 {[5, 10, 15].map((num) => (
@@ -538,13 +694,12 @@ function Practice() {
 
           <button
             onClick={() => {
-              setMode("speech");
               setPhase("play");
             }}
             className="w-full border-2 border-ink bg-primary py-4 font-display text-lg font-bold uppercase tracking-wider text-primary-foreground shadow-[var(--shadow-hard)] transition-all hover:bg-primary/90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer flex items-center justify-center gap-2"
           >
             <Mic className="size-5" />
-            <span>Начать практику чтения вслух (Start Speaking {count} Sentences) →</span>
+            <span>Начать практику ({mode === "shadowing" ? "Start Audio Shadowing" : "Start Oral Reading"} {count} Sentences) →</span>
           </button>
         </div>
       )}
@@ -564,16 +719,29 @@ function Practice() {
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                setMode("cyrillic_quiz");
-                setTab("workouts");
-                setPhase("play");
-              }}
-              className="shrink-0 border-2 border-ink bg-gold px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider text-accent-foreground shadow-[var(--shadow-hard-sm)] hover:bg-gold/90 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
-            >
-              🎯 Test Cyrillic Sounds Quiz
-            </button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  setSelectedLetter(null);
+                  setMode("cyrillic_speech");
+                  setPhase("play");
+                }}
+                className="border-2 border-ink bg-primary px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-[var(--shadow-hard-sm)] hover:bg-primary/90 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center gap-1.5"
+              >
+                <Mic className="size-4" />
+                <span>🎙️ Practice Speaking Cyrillic</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMode("cyrillic_quiz");
+                  setPhase("play");
+                }}
+                className="border-2 border-ink bg-gold px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider text-accent-foreground shadow-[var(--shadow-hard-sm)] hover:bg-gold/90 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center gap-1.5"
+              >
+                <Volume2 className="size-4" />
+                <span>🎯 Test Sounds Quiz</span>
+              </button>
+            </div>
           </div>
 
           {/* Filter Pills */}
@@ -615,7 +783,9 @@ function Practice() {
                       [{item.nameRu}]
                     </span>
                   </div>
-                  <Volume2 className="size-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  <div className="flex items-center gap-1.5">
+                    <Volume2 className="size-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  </div>
                 </div>
 
                 <div className="mt-3 text-xs space-y-1">
@@ -628,25 +798,41 @@ function Practice() {
                   <p className="text-foreground/90 font-medium break-words">
                     Sounds like: <span className="underline">{item.soundsLike}</span>
                   </p>
-                  <div className="flex items-center justify-between text-muted-foreground text-[11px] pt-1 border-t border-ink/10">
-                    <span className="break-words">
+                  <div className="flex items-center justify-between text-muted-foreground text-[11px] pt-1.5 border-t border-ink/10 gap-1">
+                    <span className="break-words truncate">
                       e.g. <span className="font-bold text-foreground">{item.sampleRu}</span> ({item.sampleEn})
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        speakRussian(item.sampleRu, 0.85);
-                      }}
-                      className="ml-1 px-1.5 py-0.5 rounded border border-ink/30 bg-muted/60 text-[10px] hover:bg-gold/40 flex items-center gap-1 shrink-0"
-                      title={`Hear example word "${item.sampleRu}"`}
-                    >
-                      <Volume2 className="size-3" />
-                      <span>Word</span>
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLetter(item);
+                          setMode("cyrillic_speech");
+                          setPhase("play");
+                        }}
+                        className="px-1.5 py-0.5 rounded border border-ink/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground text-[10px] font-bold flex items-center gap-1 shrink-0 transition-colors"
+                        title={`Practice speaking letter "${item.char}"`}
+                      >
+                        <Mic className="size-3" />
+                        <span>Speak</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          speakRussian(item.sampleRu, 0.85);
+                        }}
+                        className="px-1.5 py-0.5 rounded border border-ink/30 bg-muted/60 text-[10px] hover:bg-gold/40 flex items-center gap-1 shrink-0"
+                        title={`Hear example word "${item.sampleRu}"`}
+                      >
+                        <Volume2 className="size-3" />
+                        <span>Word</span>
+                      </button>
+                    </div>
                   </div>
                   {item.note && (
-                    <p className="text-[10px] text-primary italic font-semibold">
+                    <p className="text-[10px] text-primary italic font-semibold pt-0.5">
                       💡 {item.note}
                     </p>
                   )}

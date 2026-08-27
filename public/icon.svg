@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e63946" />
+      <stop offset="50%" stop-color="#d9381e" />
+      <stop offset="100%" stop-color="#9a1b10" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd166" />
+      <stop offset="100%" stop-color="#f4a261" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="4" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Container with Neo-Brutalist border -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bgGrad)" stroke="#111827" stroke-width="16" />
+  
+  <!-- Subtle Internal Grid Matrix -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-dasharray="12 8" opacity="0.4" />
+
+  <!-- Bold Cyrillic "Я" Character Centerpiece -->
+  <g filter="url(#shadow)">
+    <!-- Russian Cyrillic letter 'Я' with bold geometry -->
+    <path d="M 290 130 
+             L 345 130 
+             L 345 380 
+             L 290 380 
+             L 290 280 
+             L 230 280 
+             L 170 380 
+             L 110 380 
+             L 185 265 
+             C 145 250 125 210 125 175 
+             C 125 135 155 130 200 130 
+             Z 
+             M 290 175 
+             L 205 175 
+             C 185 175 175 185 175 198 
+             C 175 212 185 225 205 225 
+             L 290 225 
+             Z" 
+          fill="#ffffff" 
+          stroke="#111827" 
+          stroke-width="12" 
+          stroke-linejoin="round" />
+  </g>
+
+  <!-- Golden Lightning Badge (Spaced Repetition & High Energy) -->
+  <path d="M 370 250 L 320 340 L 355 340 L 330 420 L 410 320 L 365 320 Z" 
+        fill="url(#goldGrad)" 
+        stroke="#111827" 
+        stroke-width="8" 
+        stroke-linejoin="round" 
+        filter="url(#shadow)" />
+</svg>

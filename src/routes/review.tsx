@@ -11,22 +11,55 @@ import { speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 import { DAY, REVIEW_TARGET } from "@/storage/appState";
 
+import { SITE_URL, DEFAULT_OG_IMAGE, getBreadcrumbSchema } from "@/lib/seo";
+
 export const Route = createFileRoute("/review")({
-  head: () => ({
-    meta: [
-      { title: "Review Missed Deck — RussVerse" },
-      {
-        name: "description",
-        content:
-          "Mistake-driven spaced repetition deck: every mistake becomes a card. Answer correctly 3 times within 7 days to graduate.",
-      },
-      { property: "og:title", content: "Review Missed Deck — RussVerse" },
-      {
-        property: "og:description",
-        content: "Turn your Russian mistakes into permanent mastery with the 7-day graduation cycle.",
-      },
-    ],
-  }),
+  head: () => {
+    const breadcrumbLd = JSON.stringify(
+      getBreadcrumbSchema([
+        { name: "Home", url: "/" },
+        { name: "SM-2 Spaced Repetition Review Deck", url: "/review" },
+      ]),
+    );
+
+    return {
+      meta: [
+        { title: "Russian SRS Flashcard Deck — SM-2 Spaced Repetition Vocabulary Review | RussVerse" },
+        {
+          name: "description",
+          content:
+            "Permanent Russian memory retention powered by SuperMemo SM-2 spaced repetition. Review vocabulary, grammar cases, and past mistakes at optimal cognitive intervals.",
+        },
+        {
+          name: "keywords",
+          content:
+            "Russian spaced repetition, Russian flashcards, SM-2 Russian, Russian vocabulary SRS, Russian grammar review, memory retention Russian",
+        },
+        { property: "og:url", content: `${SITE_URL}/review` },
+        { property: "og:title", content: "Russian SRS Flashcard Deck — SM-2 Spaced Repetition | RussVerse" },
+        {
+          property: "og:description",
+          content:
+            "Turn Russian errors into permanent mastery with SM-2 spaced repetition flashcards and 7-day graduation cycles.",
+        },
+        { property: "og:image", content: DEFAULT_OG_IMAGE },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: "Russian SRS Flashcard Deck — RussVerse" },
+        {
+          name: "twitter:description",
+          content: "SuperMemo SM-2 spaced repetition flashcards for permanent Russian language recall.",
+        },
+        { name: "twitter:image", content: DEFAULT_OG_IMAGE },
+      ],
+      links: [{ rel: "canonical", href: `${SITE_URL}/review` }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: breadcrumbLd,
+        },
+      ],
+    };
+  },
   component: Review,
 });
 

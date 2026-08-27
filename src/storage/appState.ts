@@ -79,6 +79,7 @@ export interface AppState {
     skills: Partial<Record<SkillId, SkillProgress>>;
     mistakes: Mistake[];
     review: Record<string, ReviewItem>;
+    items?: Record<string, any>;
   };
   settings: {
     sound: boolean;
@@ -89,7 +90,7 @@ export interface AppState {
 export const defaultState: AppState = {
   version: STATE_VERSION,
   user: { xp: 0, streak: 0, lastActive: null, currentLevel: "A1", xpToday: 0 },
-  progress: { lessonsCompleted: [], vocabulary: {}, skills: {}, mistakes: [], review: {} },
+  progress: { lessonsCompleted: [], vocabulary: {}, skills: {}, mistakes: [], review: {}, items: {} },
   settings: { sound: true, dailyGoal: 50 },
 };
 

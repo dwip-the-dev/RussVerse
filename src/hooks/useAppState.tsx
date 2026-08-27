@@ -12,6 +12,9 @@ import {
   type ReviewItem,
 } from "@/storage/appState";
 import { addMiss, emptyWord, gradeReview, qualityFor, reviewKey, sm2 } from "@/engine/srs";
+import { recordExerciseItemMastery } from "@/engine/itemMastery";
+import { diagnoseMistake } from "@/engine/exerciseEngine";
+import { exportBackupToFile } from "@/storage/backup";
 import type { Exercise } from "@/engine/types";
 
 interface AnswerResult {
@@ -25,6 +28,8 @@ interface Ctx {
   ready: boolean;
   answer: (ex: Exercise, given: string, correct: boolean, elapsedMs: number, mode: "lesson" | "practice" | "review") => AnswerResult;
   completeLesson: (lessonId: string, xp: number) => void;
+  importBackupState: (importedState: AppState) => void;
+  exportBackup: () => void;
   reset: () => void;
 }
 
@@ -84,6 +89,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       review[key] = addMiss(review[key], ex, now);
     }
 
+    const diagnosis = !correct ? diagnoseMistake(ex, given) : undefined;
+    const currentItems = next.progress.items ?? {};
+    const items = recordExerciseItemMastery(currentItems, ex, given, correct, diagnosis, now);
+
     const mistakes = correct
       ? next.progress.mistakes
       : [{ at: now, skill: ex.skill, prompt: ex.prompt, given, answer: ex.answer }, ...next.progress.mistakes].slice(0, 50);
@@ -91,7 +100,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     next = {
       ...next,
       user: { ...next.user, xp: next.user.xp + gained, xpToday: next.user.xpToday + gained },
-      progress: { ...next.progress, skills, vocabulary, review, mistakes },
+      progress: { ...next.progress, skills, vocabulary, review, mistakes, items },
     };
 
     const afterLevel = levelFromXp(next.user.xp);
@@ -120,7 +129,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(() => commit(defaultState), [commit]);
 
-  const value = useMemo(() => ({ state, ready, answer, completeLesson, reset }), [state, ready, answer, completeLesson, reset]);
+  const importBackupState = useCallback((importedState: AppState) => {
+    commit(importedState);
+    toast.success("✨ Progress Restored Successfully!", {
+      description: `Restored ${importedState.progress.lessonsCompleted.length} units, ${importedState.user.xp} XP, and ${Object.keys(importedState.progress.items ?? {}).length} tracked items.`,
+    });
+  }, [commit]);
+
+  const exportBackup = useCallback(() => {
+    exportBackupToFile(stateRef.current);
+    toast.success("📥 Backup File Downloaded", {
+      description: "Saved full offline Russian progress as JSON backup.",
+    });
+  }, []);
+
+  const value = useMemo(
+    () => ({ state, ready, answer, completeLesson, importBackupState, exportBackup, reset }),
+    [state, ready, answer, completeLesson, importBackupState, exportBackup, reset],
+  );
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
 
