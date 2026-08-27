@@ -6,34 +6,254 @@ const assetsDir = path.resolve(outputPublic, "assets");
 const swTargetPublic = path.resolve(process.cwd(), "public/sw.js");
 const swTargetOutput = path.resolve(outputPublic, "sw.js");
 
-if (fs.existsSync(assetsDir)) {
-  const assetFiles = fs.readdirSync(assetsDir);
-  const assetUrls = assetFiles
-    .filter((f) => f.endsWith(".js") || f.endsWith(".css") || f.endsWith(".svg") || f.endsWith(".png"))
-    .map((f) => `/assets/${f}`);
+const assetFiles = fs.existsSync(assetsDir)
+  ? fs.readdirSync(assetsDir).filter((f) => f.endsWith(".js") || f.endsWith(".css") || f.endsWith(".svg") || f.endsWith(".png")).map((f) => `/assets/${f}`)
+  : [];
 
-  console.log(`[postbuild-sw] Found ${assetUrls.length} compiled client asset chunks in .output/public/assets.`);
+console.log(`[postbuild-sw] Found ${assetFiles.length} compiled client assets.`);
 
-  // Read existing public/sw.js
-  let swContent = fs.readFileSync(swTargetPublic, "utf-8");
+const swContent = `// 🇷🇺 RussVerse Service Worker — 100% Offline-First & 24h Auto-Sync Engine
+const CACHE_NAME = "russverse-v2.2.0";
 
-  // Replace STATIC_ASSETS array to include all compiled chunks
-  const jsonAssets = JSON.stringify(assetUrls, null, 2);
-  const injection = `const COMPILED_BUNDLES = ${jsonAssets};\nconst STATIC_ASSETS = [`;
+const CORE_ROUTES = [
+  "/",
+  "/learn",
+  "/practice",
+  "/review",
+  "/progress",
+];
 
-  swContent = swContent.replace(/const STATIC_ASSETS = \[/, injection);
-  swContent = swContent.replace(
-    /await safePrecache\(cache, \[\.\.\.CORE_ROUTES, \.\.\.STATIC_ASSETS\]\);/,
-    `await safePrecache(cache, [...CORE_ROUTES, ...STATIC_ASSETS, ...(typeof COMPILED_BUNDLES !== "undefined" ? COMPILED_BUNDLES : [])]);`,
+const COMPILED_BUNDLES = ${JSON.stringify(assetFiles, null, 2)};
+
+const STATIC_ASSETS = [
+  "/manifest.webmanifest",
+  "/favicon.svg",
+  "/favicon.ico",
+  "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/og-image.png",
+  "/og-image.svg",
+  "/robots.txt",
+  "/sitemap.xml",
+];
+
+// Safe Pre-Caching with Promise.allSettled and force reload
+async function safePrecache(cache, urls) {
+  await Promise.allSettled(
+    urls.map(async (url) => {
+      try {
+        const res = await fetch(url, { cache: "reload" });
+        if (res && res.status === 200) {
+          await cache.put(url, res);
+        }
+      } catch (err) {
+        console.warn("[RussVerse SW] Precache skipped for " + url, err);
+      }
+    }),
   );
+}
 
-  // Write updated sw.js to both public/ and .output/public/
-  fs.writeFileSync(swTargetPublic, swContent, "utf-8");
-  if (fs.existsSync(outputPublic)) {
-    fs.writeFileSync(swTargetOutput, swContent, "utf-8");
+// 1. Install Phase
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const allToCache = [...CORE_ROUTES, ...STATIC_ASSETS, ...COMPILED_BUNDLES];
+      await safePrecache(cache, allToCache);
+    })(),
+  );
+});
+
+// 2. Activate Phase
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        }),
+      );
+      await self.clients.claim();
+    })(),
+  );
+});
+
+// 3. Fetch Strategy: Cache-First with SPA App Shell Fallback
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (request.method !== "GET" || !url.protocol.startsWith("http")) {
+    return;
   }
 
-  console.log(`[postbuild-sw] Successfully injected ${assetUrls.length} bundle chunks into public/sw.js & .output/public/sw.js!`);
-} else {
-  console.log("[postbuild-sw] .output/public/assets does not exist yet. Skipping.");
+  // A. Navigation / HTML Requests
+  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
+    event.respondWith(
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, copy);
+            return networkResponse;
+          }
+        } catch {
+          // Offline
+        }
+
+        const cached = await caches.match(request);
+        if (cached) return cached;
+
+        const pathCached = await caches.match(url.pathname);
+        if (pathCached) return pathCached;
+
+        const rootCached = await caches.match("/");
+        if (rootCached) return rootCached;
+
+        return new Response(
+          '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>RussVerse</title></head><body style="background:#0d1117;color:#fff;text-align:center;padding:40px;font-family:sans-serif;"><h1>RussVerse Offline</h1><a href="/" style="color:#d9381e;">Go to App</a></body></html>',
+          { headers: { "Content-Type": "text/html" } }
+        );
+      })(),
+    );
+    return;
+  }
+
+  // B. Static Assets, JS, CSS, Media, Fonts
+  event.respondWith(
+    (async () => {
+      const cached = await caches.match(request);
+      if (cached) {
+        return cached;
+      }
+
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          const copy = networkResponse.clone();
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, copy);
+        }
+        return networkResponse;
+      } catch (err) {
+        const pathCached = await caches.match(url.pathname);
+        if (pathCached) return pathCached;
+        throw err;
+      }
+    })(),
+  );
+});
+
+// 4. Background Sync & Messages
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "russverse-24h-sync" || event.tag === "content-sync") {
+    event.waitUntil(perform24HourContentUpdate());
+  }
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "CHECK_FOR_UPDATES") {
+    event.waitUntil(perform24HourContentUpdate());
+  }
+  if (event.data?.type === "FORCE_PURGE_AND_RECACHE") {
+    event.waitUntil(performForcePurgeAndRecache());
+  }
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+/**
+ * Full Purge & Fresh Recache Engine
+ */
+async function performForcePurgeAndRecache() {
+  try {
+    // 1. Delete all other cache storages
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.map((k) => {
+        if (k !== CACHE_NAME) {
+          return caches.delete(k);
+        }
+      }),
+    );
+
+    // 2. Clean stale files within active cache
+    const cache = await caches.open(CACHE_NAME);
+    const validAssets = new Set([...CORE_ROUTES, ...STATIC_ASSETS, ...COMPILED_BUNDLES]);
+    
+    const cachedRequests = await cache.keys();
+    await Promise.all(
+      cachedRequests.map((req) => {
+        const url = new URL(req.url);
+        if (!validAssets.has(url.pathname)) {
+          return cache.delete(req);
+        }
+      }),
+    );
+
+    // 3. Re-download all current assets with fresh reload
+    await safePrecache(cache, Array.from(validAssets));
+
+    // 4. Notify clients
+    const allClients = await self.clients.matchAll({ type: "window" });
+    allClients.forEach((client) => {
+      client.postMessage({
+        type: "RUSSVERSE_RECACHE_COMPLETE",
+        timestamp: Date.now(),
+        version: CACHE_NAME,
+      });
+    });
+  } catch (err) {
+    console.warn("[RussVerse SW] Force recache error:", err);
+  }
 }
+
+/**
+ * Conditional 24h incremental update check
+ */
+async function perform24HourContentUpdate() {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    let updatedCount = 0;
+    const allAssets = [...CORE_ROUTES, ...STATIC_ASSETS, ...COMPILED_BUNDLES];
+
+    await Promise.allSettled(
+      allAssets.map(async (url) => {
+        try {
+          const cached = await cache.match(url);
+          const headers = new Headers();
+          if (cached) {
+            const etag = cached.headers.get("ETag");
+            const lastModified = cached.headers.get("Last-Modified");
+            if (etag) headers.set("If-None-Match", etag);
+            if (lastModified) headers.set("If-Modified-Since", lastModified);
+          }
+
+          const res = await fetch(url, { headers, cache: "no-cache" });
+          if (res && res.status === 200) {
+            await cache.put(url, res);
+            updatedCount++;
+          }
+        } catch {}
+      }),
+    );
+  } catch (err) {
+    console.warn("[RussVerse SW] 24h update error:", err);
+  }
+}
+`;
+
+fs.writeFileSync(swTargetPublic, swContent, "utf-8");
+if (fs.existsSync(outputPublic)) {
+  fs.writeFileSync(swTargetOutput, swContent, "utf-8");
+}
+
+console.log(`[postbuild-sw] Successfully written deterministic ${swContent.length} bytes to public/sw.js & .output/public/sw.js!`);

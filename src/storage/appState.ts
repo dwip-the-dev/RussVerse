@@ -133,13 +133,29 @@ export function loadState(): AppState {
     if (!raw) return defaultState;
     const parsed = JSON.parse(raw) as AppState;
     if (parsed.version !== STATE_VERSION) return defaultState;
-    return {
+
+    // Auto-migrate legacy 50 XP (or any <= 50) to 500 XP daily goal
+    const rawGoal = parsed.settings?.dailyGoal;
+    const dailyGoal = !rawGoal || rawGoal <= 50 ? 500 : rawGoal;
+
+    const merged: AppState = {
       ...defaultState,
       ...parsed,
       user: { ...defaultState.user, ...parsed.user },
       progress: { ...defaultState.progress, ...parsed.progress },
-      settings: { ...defaultState.settings, ...parsed.settings },
+      settings: {
+        ...defaultState.settings,
+        ...parsed.settings,
+        dailyGoal,
+      },
     };
+
+    // Immediately persist migrated 500 daily goal
+    if (rawGoal !== dailyGoal) {
+      saveState(merged);
+    }
+
+    return merged;
   } catch {
     return defaultState;
   }

@@ -57,7 +57,7 @@ function getRussianRank(level: number): { ru: string; en: string } {
 function Home() {
   const { state } = useAppState();
   const lvl = levelProgress(state.user.xp);
-  const goal = state.settings.dailyGoal;
+  const goal = state.settings.dailyGoal > 50 ? state.settings.dailyGoal : 500;
   const pct = Math.min(100, Math.round((state.user.xpToday / goal) * 100));
   const rank = getRussianRank(lvl.level);
 

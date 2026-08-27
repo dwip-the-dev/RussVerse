@@ -165,6 +165,10 @@ export function registerPwaServiceWorker() {
             description: "Downloaded latest Russian drills and vocabulary changes for offline learning.",
           });
         }
+        if (event.data?.type === "RUSSVERSE_RECACHE_COMPLETE") {
+          localStorage.setItem(LAST_UPDATE_KEY, String(Date.now()));
+          notifyListeners();
+        }
       });
     } catch (err) {
       console.warn("Service Worker registration failed:", err);
@@ -185,6 +189,74 @@ export function registerPwaServiceWorker() {
       description: "You can now launch RussVerse from your home screen with 100% offline access.",
     });
   });
+}
+
+/**
+ * Deep Purge & Fresh Recache:
+ * Removes any old caches/stale assets and forces a 100% clean offline reload.
+ */
+export async function forcePurgeAndRecacheApp(): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  if (!navigator.onLine) {
+    toast.error("Network connection required", {
+      description: "Please connect to the internet to purge stale cache and recache fresh content.",
+    });
+    return;
+  }
+
+  const toastId = toast.loading("🔄 Purging stale cache & recaching offline app...", {
+    description: "Downloading fresh curriculum, audio synthesizers, and removing old assets.",
+  });
+
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    if (reg) {
+      await reg.update();
+      reg.active?.postMessage({ type: "FORCE_PURGE_AND_RECACHE" });
+    }
+
+    // Client-side Cache Storage Purge & Priming
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.map(async (key) => {
+          if (!key.startsWith("russverse-v2.2")) {
+            await caches.delete(key);
+          }
+        }),
+      );
+
+      const coreRoutes = ["/", "/learn", "/practice", "/review", "/progress", "/manifest.webmanifest"];
+      const activeCache = await caches.open("russverse-v2.2.0");
+      await Promise.allSettled(
+        coreRoutes.map(async (route) => {
+          try {
+            const res = await fetch(route, { cache: "reload" });
+            if (res && res.status === 200) {
+              await activeCache.put(route, res);
+            }
+          } catch {}
+        }),
+      );
+    }
+
+    const now = Date.now();
+    localStorage.setItem(LAST_UPDATE_KEY, String(now));
+    notifyListeners();
+
+    toast.success("✅ App Recached & Stale Cache Purged!", {
+      id: toastId,
+      description: "All Russian curriculum, audio, and exercises are cached fresh and ready for offline use.",
+      duration: 5000,
+    });
+  } catch (err) {
+    console.error("Purge and recache error:", err);
+    toast.error("Failed to recache app", {
+      id: toastId,
+      description: "Please check your network connection and try again.",
+    });
+  }
 }
 
 /**
@@ -245,7 +317,7 @@ export function usePwa() {
   const checkForUpdatesNow = async () => {
     setIsUpdating(true);
     try {
-      await evaluate24HourUpdateCheck(undefined, true, true);
+      await forcePurgeAndRecacheApp();
       const now = Date.now();
       localStorage.setItem(LAST_UPDATE_KEY, String(now));
       setLastUpdate(now);
@@ -262,5 +334,6 @@ export function usePwa() {
     isUpdating,
     promptInstall,
     checkForUpdatesNow,
+    forcePurgeAndRecacheApp,
   };
 }

@@ -163,11 +163,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={checkForUpdatesNow}
                 disabled={isUpdating}
-                className="border border-ink bg-background px-2 py-0.5 text-[11px] font-bold text-foreground hover:bg-muted cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                title="Check update server for fresh curriculum and audio"
+                className="border border-ink bg-background px-2 py-0.5 text-[11px] font-bold text-foreground hover:bg-gold/30 cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                title="Purge stale cache and recache full Russian curriculum, exercises, and audio"
               >
                 <RefreshCw className={cn("size-3", isUpdating && "animate-spin text-primary")} />
-                <span>{isUpdating ? "Checking..." : "Check Updates"}</span>
+                <span>{isUpdating ? "Recaching..." : "Update & Recache"}</span>
               </button>
             </div>
           </div>

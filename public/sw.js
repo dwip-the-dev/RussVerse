@@ -1,5 +1,5 @@
 // 🇷🇺 RussVerse Service Worker — 100% Offline-First & 24h Auto-Sync Engine
-const CACHE_NAME = "russverse-v2.1.0";
+const CACHE_NAME = "russverse-v2.2.0";
 
 const CORE_ROUTES = [
   "/",
@@ -10,27 +10,28 @@ const CORE_ROUTES = [
 ];
 
 const COMPILED_BUNDLES = [
-  "/assets/AppShell-B2n1PAKq.js",
-  "/assets/ExercisePlayer-C9qav0pM.js",
-  "/assets/arrow-right-BwUNQhlY.js",
-  "/assets/chevron-right-B3VjS0sg.js",
-  "/assets/circle-check-BiOsx4Xw.js",
-  "/assets/index-DNnpC5p-.js",
-  "/assets/learn-BExK2NXD.js",
-  "/assets/lesson._id-BYBVNLh1.js",
-  "/assets/lesson._id-dXPI162J.js",
-  "/assets/practice-DGh-ON1c.js",
-  "/assets/progress-R2eYbY_G.js",
-  "/assets/pwa-Bhm00fEc.js",
-  "/assets/review-vkFmnCu0.js",
+  "/assets/AppShell-D-YmMLwk.js",
+  "/assets/ExercisePlayer-Dg0Mdlhn.js",
+  "/assets/arrow-right-BfKYCQfx.js",
+  "/assets/chevron-right-s8fwPmRU.js",
+  "/assets/circle-check-Cqt91Tow.js",
+  "/assets/index-BEcZUEre.js",
+  "/assets/learn-DF58vUQd.js",
+  "/assets/lesson._id-B2WwFeS0.js",
+  "/assets/lesson._id-InwlemMh.js",
+  "/assets/practice-hVvfSKAw.js",
+  "/assets/progress-iDLCifm9.js",
+  "/assets/pwa-B5EE_3KN.js",
+  "/assets/review-Cl36JVyZ.js",
   "/assets/rolldown-runtime-Bh1tDfsg.js",
-  "/assets/routes-DLNmhPev.js",
+  "/assets/routes-RxeunWW-.js",
   "/assets/skills-C_HHOHFi.js",
-  "/assets/sound-C7BukbsW.js",
-  "/assets/sparkles-j2Aau7T7.js",
+  "/assets/sound-CV9LTJcl.js",
+  "/assets/sparkles-DQMK5ytx.js",
   "/assets/styles-C2BVM-ah.css",
-  "/assets/target-JAYtopRC.js"
+  "/assets/target-BVNOiFli.js"
 ];
+
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/favicon.svg",
@@ -44,7 +45,7 @@ const STATIC_ASSETS = [
   "/sitemap.xml",
 ];
 
-// Helper: Safely fetch and cache an array of URLs without failing the whole batch
+// Safe Pre-Caching with Promise.allSettled and force reload
 async function safePrecache(cache, urls) {
   await Promise.allSettled(
     urls.map(async (url) => {
@@ -54,59 +55,25 @@ async function safePrecache(cache, urls) {
           await cache.put(url, res);
         }
       } catch (err) {
-        console.warn(`[RussVerse SW] Precache skipped for ${url}:`, err);
+        console.warn("[RussVerse SW] Precache skipped for " + url, err);
       }
     }),
   );
 }
 
-// 1. Install Phase: Cache all core routes, static assets, and extract bundle JS/CSS from HTML
+// 1. Install Phase
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-
-      // Precache static assets & routes
-      await safePrecache(cache, [...CORE_ROUTES, ...STATIC_ASSETS, ...(typeof COMPILED_BUNDLES !== "undefined" ? COMPILED_BUNDLES : [])]);
-
-      // Dynamically extract and precache all built JS & CSS chunk bundles referenced in "/" HTML
-      try {
-        const rootRes = await cache.match("/");
-        if (rootRes) {
-          const html = await rootRes.text();
-          const bundleUrls = [];
-
-          // Match <script src="...">
-          const scriptMatches = html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi);
-          for (const match of scriptMatches) {
-            if (match[1] && !match[1].startsWith("http")) {
-              bundleUrls.push(match[1]);
-            }
-          }
-
-          // Match <link rel="stylesheet" href="...">
-          const styleMatches = html.matchAll(/<link[^>]+href=["']([^"']+\.css[^"']*)["']/gi);
-          for (const match of styleMatches) {
-            if (match[1] && !match[1].startsWith("http")) {
-              bundleUrls.push(match[1]);
-            }
-          }
-
-          if (bundleUrls.length > 0) {
-            await safePrecache(cache, bundleUrls);
-          }
-        }
-      } catch (e) {
-        console.warn("[RussVerse SW] Bundle extraction error:", e);
-      }
-
-      // Activate immediately
-      await self.skipWaiting();
+      const allToCache = [...CORE_ROUTES, ...STATIC_ASSETS, ...COMPILED_BUNDLES];
+      await safePrecache(cache, allToCache);
     })(),
   );
 });
 
-// 2. Activate Phase: Clean up old versions & claim clients immediately
+// 2. Activate Phase
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
@@ -123,21 +90,19 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// 3. Fetch Strategy: Cache-First with Network & SPA App Shell Fallback
+// 3. Fetch Strategy: Cache-First with SPA App Shell Fallback
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignore non-GET requests and browser extension requests
   if (request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
-  // A. Navigation Requests (HTML Pages / Routes)
+  // A. Navigation / HTML Requests
   if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
     event.respondWith(
       (async () => {
-        // Try network first when online to get fresh server renders
         try {
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
@@ -147,41 +112,35 @@ self.addEventListener("fetch", (event) => {
             return networkResponse;
           }
         } catch {
-          // Network failed (100% Offline)
+          // Offline
         }
 
-        // Offline Fallback 1: Exact request match from cache
         const cached = await caches.match(request);
         if (cached) return cached;
 
-        // Offline Fallback 2: Pathname match
         const pathCached = await caches.match(url.pathname);
         if (pathCached) return pathCached;
 
-        // Offline Fallback 3: SPA Root App Shell (boots TanStack Router client-side)
         const rootCached = await caches.match("/");
         if (rootCached) return rootCached;
 
-        // Final emergency offline HTML
         return new Response(
-          `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>RussVerse Offline</title></head><body style="background:#0d1117;color:#fff;font-family:sans-serif;text-align:center;padding:40px;"><h1>RussVerse Offline</h1><p>Open <a href="/" style="color:#d9381e;">RussVerse Dashboard</a></p></body></html>`,
-          { headers: { "Content-Type": "text/html" } },
+          '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>RussVerse</title></head><body style="background:#0d1117;color:#fff;text-align:center;padding:40px;font-family:sans-serif;"><h1>RussVerse Offline</h1><a href="/" style="color:#d9381e;">Go to App</a></body></html>',
+          { headers: { "Content-Type": "text/html" } }
         );
       })(),
     );
     return;
   }
 
-  // B. Hashed Assets (/assets/*, .js, .css, .woff2, .png, .svg, .ico, Google Fonts): Cache-First
+  // B. Static Assets, JS, CSS, Media, Fonts
   event.respondWith(
     (async () => {
-      // 1. Check cache first
       const cached = await caches.match(request);
       if (cached) {
         return cached;
       }
 
-      // 2. Fetch from network
       try {
         const networkResponse = await fetch(request);
         if (networkResponse && networkResponse.status === 200) {
@@ -191,7 +150,6 @@ self.addEventListener("fetch", (event) => {
         }
         return networkResponse;
       } catch (err) {
-        // 3. If offline and failed, attempt matching by pathname only
         const pathCached = await caches.match(url.pathname);
         if (pathCached) return pathCached;
         throw err;
@@ -200,15 +158,9 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// 4. Background Sync & Client Message Handlers
+// 4. Background Sync & Messages
 self.addEventListener("periodicsync", (event) => {
   if (event.tag === "russverse-24h-sync" || event.tag === "content-sync") {
-    event.waitUntil(perform24HourContentUpdate());
-  }
-});
-
-self.addEventListener("sync", (event) => {
-  if (event.tag === "russverse-sync-check") {
     event.waitUntil(perform24HourContentUpdate());
   }
 });
@@ -217,19 +169,68 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "CHECK_FOR_UPDATES") {
     event.waitUntil(perform24HourContentUpdate());
   }
+  if (event.data?.type === "FORCE_PURGE_AND_RECACHE") {
+    event.waitUntil(performForcePurgeAndRecache());
+  }
   if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
 });
 
 /**
- * Conditional delta update check
+ * Full Purge & Fresh Recache Engine
+ */
+async function performForcePurgeAndRecache() {
+  try {
+    // 1. Delete all other cache storages
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.map((k) => {
+        if (k !== CACHE_NAME) {
+          return caches.delete(k);
+        }
+      }),
+    );
+
+    // 2. Clean stale files within active cache
+    const cache = await caches.open(CACHE_NAME);
+    const validAssets = new Set([...CORE_ROUTES, ...STATIC_ASSETS, ...COMPILED_BUNDLES]);
+    
+    const cachedRequests = await cache.keys();
+    await Promise.all(
+      cachedRequests.map((req) => {
+        const url = new URL(req.url);
+        if (!validAssets.has(url.pathname)) {
+          return cache.delete(req);
+        }
+      }),
+    );
+
+    // 3. Re-download all current assets with fresh reload
+    await safePrecache(cache, Array.from(validAssets));
+
+    // 4. Notify clients
+    const allClients = await self.clients.matchAll({ type: "window" });
+    allClients.forEach((client) => {
+      client.postMessage({
+        type: "RUSSVERSE_RECACHE_COMPLETE",
+        timestamp: Date.now(),
+        version: CACHE_NAME,
+      });
+    });
+  } catch (err) {
+    console.warn("[RussVerse SW] Force recache error:", err);
+  }
+}
+
+/**
+ * Conditional 24h incremental update check
  */
 async function perform24HourContentUpdate() {
   try {
     const cache = await caches.open(CACHE_NAME);
     let updatedCount = 0;
-    const allAssets = [...CORE_ROUTES, ...STATIC_ASSETS];
+    const allAssets = [...CORE_ROUTES, ...STATIC_ASSETS, ...COMPILED_BUNDLES];
 
     await Promise.allSettled(
       allAssets.map(async (url) => {
@@ -248,23 +249,9 @@ async function perform24HourContentUpdate() {
             await cache.put(url, res);
             updatedCount++;
           }
-        } catch {
-          // Silent catch when offline
-        }
+        } catch {}
       }),
     );
-
-    if (updatedCount > 0) {
-      const allClients = await self.clients.matchAll({ type: "window" });
-      allClients.forEach((client) => {
-        client.postMessage({
-          type: "RUSSVERSE_CONTENT_UPDATED",
-          timestamp: Date.now(),
-          version: CACHE_NAME,
-          updatedCount,
-        });
-      });
-    }
   } catch (err) {
     console.warn("[RussVerse SW] 24h update error:", err);
   }
