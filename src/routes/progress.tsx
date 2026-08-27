@@ -11,7 +11,6 @@ import {
   HelpCircle,
   Layers,
   Mic,
-  RefreshCw,
   RotateCcw,
   ShieldAlert,
   ShieldCheck,
@@ -29,7 +28,6 @@ import { lessons } from "@/data/lessons";
 import { vocabById, vocabulary } from "@/data/vocabulary";
 import { getItemMasterySummary, getLeechItems, type ItemMasteryRecord } from "@/engine/itemMastery";
 import { useAppState } from "@/hooks/useAppState";
-import { usePwa } from "@/lib/pwa";
 import { speakRussian } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 import { levelProgress } from "@/storage/appState";
@@ -99,7 +97,6 @@ function getRussianRank(level: number): { ru: string; en: string; next: string }
 
 function Progress() {
   const { state, reset, importBackupState, exportBackup } = useAppState();
-  const { checkForUpdatesNow, isUpdating } = usePwa();
   const [tab, setTab] = useState<"pillars" | "items" | "vault" | "mistakes">("items");
   const [itemFilter, setItemFilter] = useState<"all" | "word" | "grammar" | "cyrillic" | "phonetic" | "leech">("all");
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -684,17 +681,6 @@ function Progress() {
             <span>Restore Backup</span>
             <input type="file" accept=".json" onChange={handleFileInput} className="hidden" />
           </label>
-
-          <button
-            type="button"
-            onClick={checkForUpdatesNow}
-            disabled={isUpdating}
-            className="flex items-center gap-1.5 border-2 border-ink bg-gold px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider text-accent-foreground shadow-[var(--shadow-hard-sm)] hover:bg-gold/90 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
-            title="Wipe stale cache versions and re-download fresh Russian lessons for offline study"
-          >
-            <RefreshCw className={cn("size-3.5", isUpdating && "animate-spin text-primary")} />
-            <span>{isUpdating ? "Purging & Recaching..." : "Purge & Recache Offline"}</span>
-          </button>
 
           <button
             type="button"

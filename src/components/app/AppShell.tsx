@@ -5,13 +5,9 @@ import {
   Dumbbell,
   Flame,
   Home,
-  RefreshCw,
-  Smartphone,
   User,
   Volume2,
   VolumeX,
-  Wifi,
-  WifiOff,
   Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -31,7 +27,7 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state } = useAppState();
-  const { isOnline, isInstallable, isInstalled, promptInstall, checkForUpdatesNow, isUpdating, lastUpdate } = usePwa();
+  const { isInstallable, isInstalled, promptInstall } = usePwa();
   const lvl = levelProgress(state.user.xp);
   const dueMissed = Object.values(state.progress.review).filter(
     (c) => c.dueAt <= Date.now() && c.cleared < REVIEW_TARGET,
@@ -43,14 +39,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       {isInstallable && !isInstalled && (
         <div className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold flex items-center justify-between gap-3 border-b-2 border-ink shadow-[var(--shadow-hard-sm)] z-40">
           <div className="flex items-center gap-2 min-w-0">
-            <Smartphone className="size-4 shrink-0" />
-            <span className="truncate">Install RussVerse App: 100% Offline Russian learning · 24h Auto-Sync</span>
+            <Download className="size-4 shrink-0" />
+            <span className="truncate">Install RussVerse App on your device for quick standalone access</span>
           </div>
           <button
             onClick={promptInstall}
             className="border-2 border-ink bg-gold px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-accent-foreground shadow-[1px_1px_0_0_var(--ink)] hover:bg-gold/90 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer shrink-0"
           >
-            📲 Install App
+            Install App
           </button>
         </div>
       )}
@@ -123,54 +119,26 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main Content Viewport */}
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6 md:pb-12">{children}</main>
 
-      {/* PWA Offline & 24h Sync Footer Bar + SEO Footer Navigation */}
+      {/* Footer Navigation */}
       <footer className="border-t-2 border-ink bg-card py-6 px-4 mb-16 md:mb-0 text-xs" role="contentinfo">
         <div className="mx-auto max-w-4xl space-y-4">
-          {/* Top Status Stripe */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-muted-foreground border-b border-ink/20 pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {isOnline ? (
-                <span className="flex items-center gap-1 text-success font-semibold">
-                  <Wifi className="size-3.5" />
-                  <span>Online · 24h Auto-Sync Active</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-primary font-semibold">
-                  <WifiOff className="size-3.5" />
-                  <span>100% Offline Mode (Fully Operational)</span>
-                </span>
-              )}
-              <span className="text-border hidden sm:inline">|</span>
-              <span className="text-[11px]">
-                {lastUpdate
-                  ? `Last updated: ${new Date(lastUpdate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                  : "24h Auto-Sync Ready"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 ml-auto">
-              {isInstallable && !isInstalled && (
-                <button
-                  type="button"
-                  onClick={promptInstall}
-                  className="border border-ink bg-background px-2 py-0.5 text-[11px] font-bold text-foreground hover:bg-gold/30 cursor-pointer flex items-center gap-1"
-                >
-                  <Download className="size-3" />
-                  <span>Install PWA</span>
-                </button>
-              )}
+          {/* Optional Clean Install PWA Bar if prompt is available */}
+          {isInstallable && !isInstalled && (
+            <div className="flex items-center justify-between gap-3 border-2 border-ink bg-background p-3 shadow-[var(--shadow-hard-sm)]">
+              <div>
+                <p className="font-display font-bold text-foreground">Install RussVerse App</p>
+                <p className="text-[11px] text-muted-foreground">Fast, standalone access to all 220 units on your device.</p>
+              </div>
               <button
                 type="button"
-                onClick={checkForUpdatesNow}
-                disabled={isUpdating}
-                className="border border-ink bg-background px-2 py-0.5 text-[11px] font-bold text-foreground hover:bg-gold/30 cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                title="Purge stale cache and recache full Russian curriculum, exercises, and audio"
+                onClick={promptInstall}
+                className="border-2 border-ink bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-[1px_1px_0_0_var(--ink)] hover:bg-primary/90 cursor-pointer flex items-center gap-1.5"
               >
-                <RefreshCw className={cn("size-3", isUpdating && "animate-spin text-primary")} />
-                <span>{isUpdating ? "Recaching..." : "Update & Recache"}</span>
+                <Download className="size-3.5" />
+                <span>Install App</span>
               </button>
             </div>
-          </div>
+          )}
 
           {/* Semantic SEO Navigation Links & Curriculum Directory */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-[11px] text-muted-foreground pt-1">
