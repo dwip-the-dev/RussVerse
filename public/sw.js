@@ -10,26 +10,26 @@ const CORE_ROUTES = [
 ];
 
 const COMPILED_BUNDLES = [
-  "/assets/AppShell-DwYuFAVN.js",
-  "/assets/ExercisePlayer-Bd77fCiU.js",
-  "/assets/arrow-right-BolYJKvh.js",
-  "/assets/chevron-right-CjwfXLYl.js",
-  "/assets/circle-check-CLWTuoJd.js",
-  "/assets/index-nSQeCBUv.js",
-  "/assets/learn-BDc3L6GK.js",
-  "/assets/lesson._id-B5LTevlc.js",
-  "/assets/lesson._id-Dr63_KsB.js",
-  "/assets/practice-gMe-bvqo.js",
-  "/assets/progress-BhvOm_td.js",
+  "/assets/AppShell-CluT9mkK.js",
+  "/assets/ExercisePlayer-DpEYPHSq.js",
+  "/assets/arrow-right-BygQoOkq.js",
+  "/assets/chevron-right-3ok0uuz5.js",
+  "/assets/circle-check-pueU06P7.js",
+  "/assets/index-rUcZliEn.js",
+  "/assets/learn-hiX7Y24q.js",
+  "/assets/lesson._id-BZpEEzLC.js",
+  "/assets/lesson._id-HbCrD9Xm.js",
+  "/assets/practice-DaWlKZn9.js",
+  "/assets/progress-DFwXycNh.js",
   "/assets/pwa-2NCYiAq7.js",
-  "/assets/review-BgdlO8da.js",
+  "/assets/review-DkQPcoFz.js",
   "/assets/rolldown-runtime-Bh1tDfsg.js",
-  "/assets/routes-D3H6YLOI.js",
+  "/assets/routes-DmrMmwrC.js",
   "/assets/skills-C_HHOHFi.js",
-  "/assets/sound-0dFWMNKY.js",
-  "/assets/sparkles-ZwzZD6IJ.js",
-  "/assets/styles-CwQS9Zh0.css",
-  "/assets/target-CbtFKmX9.js"
+  "/assets/sound-1u7Elpnm.js",
+  "/assets/sparkles-1O0E2pwC.js",
+  "/assets/styles-BpMEqO69.css",
+  "/assets/target-Ie1Vm3fr.js"
 ];
 
 const STATIC_ASSETS = [

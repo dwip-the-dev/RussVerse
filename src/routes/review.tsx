@@ -220,8 +220,8 @@ function Review() {
         </div>
       )}
 
-      {/* Cards List */}
-      <div className="mt-3 grid gap-2.5">
+      {/* Cards List with smooth filter transition */}
+      <div key={filterSkill} className="mt-3 grid gap-2.5 animate-tab-pane">
         {cards
           .sort((a, b) => a.deadline - b.deadline)
           .map((c) => {

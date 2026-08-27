@@ -442,7 +442,7 @@ function Practice() {
 
       {/* TAB 1: Workouts & Training Gyms */}
       {tab === "workouts" && (
-        <div className="mt-5 space-y-6 min-w-0 break-words">
+        <div className="mt-5 space-y-6 min-w-0 break-words animate-tab-pane">
           <div>
             <h2 className="text-xs font-bold uppercase tracking-widest text-primary">
               Select Training Gym ({totalExercisesInPool}+ Exercises)
@@ -593,7 +593,7 @@ function Practice() {
 
       {/* TAB 2: Oral Speaking & Shadowing Studio */}
       {tab === "speech" && (
-        <div className="mt-5 space-y-6 min-w-0 break-words">
+        <div className="mt-5 space-y-6 min-w-0 break-words animate-tab-pane">
           <div className="border-2 border-ink bg-card p-5 shadow-[var(--shadow-hard)]">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -706,7 +706,7 @@ function Practice() {
 
       {/* TAB 3: Dedicated Cyrillics Soundboard & Audio Guide */}
       {tab === "cyrillics" && (
-        <div className="mt-5 space-y-5 min-w-0 break-words">
+        <div className="mt-5 space-y-5 min-w-0 break-words animate-tab-pane">
           {/* Top Cyrillic Banner */}
           <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>

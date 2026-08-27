@@ -116,8 +116,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Main Content Viewport */}
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6 md:pb-12">{children}</main>
+      {/* Main Content Viewport with smooth entry */}
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6 md:pb-12 animate-page-enter">{children}</main>
 
       {/* Footer Navigation */}
       <footer className="border-t-2 border-ink bg-card py-6 px-4 mb-16 md:mb-0 text-xs" role="contentinfo">

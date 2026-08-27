@@ -197,7 +197,7 @@ function Progress() {
 
       {/* TAB 0: Granular Item-Level Mastery Hub */}
       {tab === "items" && (
-        <div className="mt-5 space-y-5 min-w-0 break-words">
+        <div className="mt-5 space-y-5 min-w-0 break-words animate-tab-pane">
           {/* Header Card */}
           <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -410,7 +410,7 @@ function Progress() {
 
       {/* TAB 1: 6 Brain Pillars */}
       {tab === "pillars" && (
-        <div className="mt-5 space-y-4">
+        <div className="mt-5 space-y-4 animate-tab-pane">
           <div className="border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard)]">
             <div className="flex items-center justify-between">
               <h3 className="font-display text-base font-bold flex items-center gap-2">
@@ -491,7 +491,7 @@ function Progress() {
 
       {/* TAB 2: Vocabulary Vault */}
       {tab === "vault" && (
-        <div className="mt-5">
+        <div className="mt-5 animate-tab-pane">
           <div className="mb-4 border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard-sm)]">
             <h3 className="font-display font-bold text-base flex items-center gap-2">
               <Sparkles className="size-4 text-gold" />
@@ -539,7 +539,7 @@ function Progress() {
 
       {/* TAB 3: Mistake Log */}
       {tab === "mistakes" && (
-        <div className="mt-5 space-y-3">
+        <div className="mt-5 space-y-3 animate-tab-pane">
           <div className="mb-4 border-2 border-ink bg-card p-4 shadow-[var(--shadow-hard-sm)]">
             <h3 className="font-display font-bold text-base flex items-center gap-2">
               <Target className="size-4 text-primary" />

@@ -337,8 +337,8 @@ export function ExercisePlayer({ exercises, mode, title, onFinish }: Props) {
         </div>
       </div>
 
-      {/* Main Exercise Card */}
-      <div className="border-2 border-ink bg-card p-5 shadow-[var(--shadow-hard)] relative">
+      {/* Main Exercise Card with smooth step transition */}
+      <div key={ex.id} className="border-2 border-ink bg-card p-5 shadow-[var(--shadow-hard)] relative animate-tab-pane">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1.5">
             {isOralMode && <Mic className="size-3.5" />}

@@ -207,6 +207,9 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
@@ -216,3 +219,81 @@
     letter-spacing: -0.02em;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Smooth Micro-Interactions & Transitions                            */
+/* ------------------------------------------------------------------ */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.99) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  70% {
+    transform: scale(1.015);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-tab-pane {
+  animation: tabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pop-in {
+  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth spring hover effects */
+.btn-smooth {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.btn-smooth:hover {
+  transform: translateY(-1px);
+}
+.btn-smooth:active {
+  transform: translateY(1px) scale(0.98);
+}
+

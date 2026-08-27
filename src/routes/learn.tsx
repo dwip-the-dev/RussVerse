@@ -233,7 +233,7 @@ function Learn() {
 
       {/* TAB 1: 220 Units Scaffolding Accordion */}
       {tab === "units" && (
-        <div className="mt-5 space-y-5 min-w-0 break-words">
+        <div className="mt-5 space-y-5 min-w-0 break-words animate-tab-pane">
           {/* Filter, Search & Accordion Controls Bar */}
           <div className="space-y-3 border-2 border-ink bg-card p-3.5 shadow-[var(--shadow-hard-sm)]">
             {/* Search Input */}
@@ -414,7 +414,7 @@ function Learn() {
 
       {/* TAB 2: Cyrillic Alphabet Soundboard */}
       {tab === "alphabet" && (
-        <div className="mt-5 min-w-0 break-words">
+        <div className="mt-5 min-w-0 break-words animate-tab-pane">
           <div className="mb-4 border-2 border-ink bg-card p-3.5 sm:p-4 shadow-[var(--shadow-hard-sm)]">
             <h3 className="font-display font-bold text-base sm:text-lg flex items-center gap-2">
               <Volume2 className="size-5 text-primary shrink-0" />
@@ -467,7 +467,7 @@ function Learn() {
 
       {/* TAB 3: Grammar Dependency Tree */}
       {tab === "grammar" && (
-        <div className="mt-5 space-y-3 min-w-0 break-words">
+        <div className="mt-5 space-y-3 min-w-0 break-words animate-tab-pane">
           <div className="mb-4 border-2 border-ink bg-card p-3.5 sm:p-4 shadow-[var(--shadow-hard-sm)]">
             <h3 className="font-display font-bold text-base sm:text-lg flex items-center gap-2">
               <GitFork className="size-5 text-primary shrink-0" />
