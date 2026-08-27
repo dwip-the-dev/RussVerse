@@ -213,6 +213,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <li><span className="text-foreground font-semibold">100% Offline-First PWA</span></li>
                 <li><span className="text-foreground font-semibold">Free & Open Access</span></li>
                 <li><Link to="/progress" className="hover:text-primary transition-colors">Universal Backup & Restore</Link></li>
+                <li>
+                  <a href="https://dwip.me" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary font-bold">
+                    By dwip (dwip.me)
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:dwip@dwip.dedyn.io" className="text-primary hover:underline font-mono text-[10.5px]">
+                    dwip@dwip.dedyn.io
+                  </a>
+                </li>
                 <li><a href="https://russverse.vercel.app/sitemap.xml" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">XML Sitemap Index</a></li>
                 <li className="pt-1 text-[10px] text-muted-foreground font-mono">© {new Date().getFullYear()} RussVerse</li>
               </ul>

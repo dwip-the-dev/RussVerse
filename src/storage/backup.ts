@@ -195,7 +195,7 @@ export function validateAndMigrateState(raw: unknown): AppState {
   // 3. Settings
   const rawSettings: any = sourceState["settings"] ?? {};
   const sound = typeof rawSettings["sound"] === "boolean" ? rawSettings["sound"] : true;
-  const dailyGoal = typeof rawSettings["dailyGoal"] === "number" && rawSettings["dailyGoal"] > 0 ? rawSettings["dailyGoal"] : 50;
+  const dailyGoal = typeof rawSettings["dailyGoal"] === "number" && rawSettings["dailyGoal"] > 0 ? rawSettings["dailyGoal"] : 500;
 
   return {
     version: STATE_VERSION,

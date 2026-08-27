@@ -91,7 +91,7 @@ export const defaultState: AppState = {
   version: STATE_VERSION,
   user: { xp: 0, streak: 0, lastActive: null, currentLevel: "A1", xpToday: 0 },
   progress: { lessonsCompleted: [], vocabulary: {}, skills: {}, mistakes: [], review: {}, items: {} },
-  settings: { sound: true, dailyGoal: 50 },
+  settings: { sound: true, dailyGoal: 500 },
 };
 
 export const DAY = 86_400_000;

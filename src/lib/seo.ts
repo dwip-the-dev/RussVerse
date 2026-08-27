@@ -25,7 +25,8 @@ export function getWebsiteSchema() {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
       "name": "RussVerse Education",
-      "url": SITE_URL,
+      "url": "https://dwip.me",
+      "email": "dwip@dwip.dedyn.io",
       "logo": {
         "@type": "ImageObject",
         "url": `${SITE_URL}/icon-512.png`,

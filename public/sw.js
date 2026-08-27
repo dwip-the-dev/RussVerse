@@ -1,5 +1,5 @@
 // 🇷🇺 RussVerse Service Worker — Offline-First & 24h Auto-Sync Engine
-const CACHE_NAME = "russverse-v1.2.0";
+const CACHE_NAME = "russverse-v2.0.0";
 const PRECACHE_ASSETS = [
   "/",
   "/learn",
@@ -13,7 +13,10 @@ const PRECACHE_ASSETS = [
   "/icon.svg",
   "/icon-192.png",
   "/icon-512.png",
+  "/og-image.png",
+  "/og-image.svg",
   "/robots.txt",
+  "/sitemap.xml",
 ];
 
 // 1. Install: Precache all essential core routes & assets for 100% offline access
